@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회복탄력성(RQ) 진단</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+
+    :root {
+      --self:   #6366f1;
+      --inter:  #10b981;
+      --pos:    #f59e0b;
+      --bg:     #0d0d1a;
+      --card:   rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.09);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      background: var(--bg);
+      color: #e2e8f0;
+      font-family: 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── 배경 그라디언트 ── */
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 10%, rgba(99,102,241,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 80% 80%, rgba(16,185,129,0.08) 0%, transparent 70%);
+    }
+
+    .wrap { position:relative; z-index:1; max-width: 720px; margin:0 auto; padding: 40px 20px; }
+
+    /* ── 스크린 공통 ── */
+    .screen { display:none; }
+    .screen.active { display:block; }
+
+    /* ── 인트로 ── */
+    .intro-badge {
+      display: inline-flex; align-items:center; gap:8px;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 50px; padding: 6px 16px;
+      font-size: 0.75rem; color: #a5b4fc; letter-spacing:1px;
+      margin-bottom: 24px;
+    }
+    .intro-badge span { width:6px; height:6px; border-radius:50%; background:#6366f1; animation: blink 1.5s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    .intro-title {
+      font-size: clamp(1.8rem,5vw,2.8rem);
+      font-weight: 900;
+      line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .intro-title .highlight {
+      background: linear-gradient(90deg, #818cf8, #34d399, #fbbf24);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+
+    .intro-desc {
+      color: #94a3b8; line-height:1.8; font-size:0.95rem; margin-bottom:36px;
+    }
+
+    .info-grid {
+      display: grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-bottom: 40px;
+    }
+    .info-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px 14px; text-align:center;
+    }
+    .info-card .ic-num { font-size:1.6rem; font-weight:900; margin-bottom:4px; }
+    .info-card .ic-lbl { font-size:0.72rem; color:#64748b; }
+    .info-card:nth-child(1) .ic-num { color:#818cf8; }
+    .info-card:nth-child(2) .ic-num { color:#34d399; }
+    .info-card:nth-child(3) .ic-num { color:#fbbf24; }
+
+    .category-list { display:flex; flex-direction:column; gap:10px; margin-bottom:40px; }
+    .cat-item {
+      display:flex; align-items:center; gap:14px;
+      background: var(--card); border:1px solid var(--border);
+      border-radius: 12px; padding: 14px 18px;
+    }
+    .cat-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .cat-item:nth-child(1) .cat-dot { background: var(--self); box-shadow: 0 0 8px var(--self); }
+    .cat-item:nth-child(2) .cat-dot { background: var(--inter); box-shadow: 0 0 8px var(--inter); }
+    .cat-item:nth-child(3) .cat-dot { background: var(--pos);  box-shadow: 0 0 8px var(--pos); }
+    .cat-name { font-weight:700; font-size:0.9rem; }
+    .cat-range { font-size:0.78rem; color:#64748b; }
+
+    .btn-start {
+      width:100%; padding:18px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color:#fff; border:none; border-radius:14px;
+      font-size:1.05rem; font-weight:700; letter-spacing:1px;
+      cursor:pointer; transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 4px 24px rgba(99,102,241,0.4);
+    }
+    .btn-start:hover { transform:translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.5); }
+
+    /* ── 진단 화면 ── */
+    .progress-bar-wrap {
+      display:flex; align-items:center; gap:12px; margin-bottom:32px;
+    }
+    .progress-track {
+      flex:1; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;
+    }
+    .progress-fill {
+      height:100%; border-radius:3px;
+      background: linear-gradient(90deg, #6366f1, #10b981, #f59e0b);
+      transition: width .4s ease;
+    }
+    .progress-text { font-size:0.78rem; color:#64748b; white-space:nowrap; }
+
+    .q-category-badge {
+      display:inline-flex; align-items:center; gap:7px;
+      padding: 5px 14px; border-radius:50px;
+      font-size:0.72rem; font-weight:700; letter-spacing:1px;
+      margin-bottom: 18px;
+    }
+    .badge-self  { background:rgba(99,102,241,0.15);  color:#818cf8;  border:1px solid rgba(99,102,241,0.25); }
+    .badge-inter { background:rgba(16,185,129,0.15);  color:#34d399;  border:1px solid rgba(16,185,129,0.25); }
+    .badge-pos   { background:rgba(245,158,11,0.15);  color:#fbbf24;  border:1px solid rgba(245,158,11,0.25); }
+
+    .q-num { font-size:0.8rem; color:#475569; margin-bottom:10px; }
+
+    .q-text {
+      font-size: 1.15rem; font-weight:500; line-height:1.7;
+      margin-bottom: 32px; color:#e2e8f0;
+    }
+
+    .choices { display:grid; grid-template-columns: repeat(5,1fr); gap:10px; margin-bottom:40px; }
+
+    .choice-btn {
+      display:flex; flex-direction:column; align-items:center; gap:8px;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 18px 6px;
+      cursor:pointer; transition: all .15s;
+      position:relative;
+    }
+    .choice-btn:hover { border-color: rgba(255,255,255,0.25); background:rgba(255,255,255,0.07); transform:translateY(-2px); }
+    .choice-btn.selected { transform:translateY(-3px); }
+    .choice-btn[data-val="1"].selected { border-color:#ef4444; background:rgba(239,68,68,0.12); }
+    .choice-btn[data-val="2"].selected { border-color:#f97316; background:rgba(249,115,22,0.12); }
+    .choice-btn[data-val="3"].selected { border-color:#eab308; background:rgba(234,179,8,0.12); }
+    .choice-btn[data-val="4"].selected { border-color:#22c55e; background:rgba(34,197,94,0.12); }
+    .choice-btn[data-val="5"].selected { border-color:#6366f1; background:rgba(99,102,241,0.15); }
+
+    .choice-circle {
+      width:36px; height:36px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1rem; font-weight:700;
+      border: 2px solid rgba(255,255,255,0.12);
+      transition: all .15s;
+    }
+    .choice-btn[data-val="1"] .choice-circle { color:#ef4444; }
+    .choice-btn[data-val="2"] .choice-circle { color:#f97316; }
+    .choice-btn[data-val="3"] .choice-circle { color:#eab308; }
+    .choice-btn[data-val="4"] .choice-circle { color:#22c55e; }
+    .choice-btn[data-val="5"] .choice-circle { color:#6366f1; }
+    .choice-btn.selected .choice-circle { border-color:currentColor; }
+
+    .choice-label { font-size:0.62rem; color:#64748b; text-align:center; line-height:1.3; }
+
+    .nav-row { display:flex; gap:12px; }
+    .btn-prev {
+      padding:14px 28px;
+      background:rgba(255,255,255,0.06); border:1px solid var(--border);
+      color:#94a3b8; border-radius:12px; cursor:pointer;
+      font-size:0.9rem; transition:.15s;
+    }
+    .btn-prev:hover { background:rgba(255,255,255,0.1); }
+    .btn-next {
+      flex:1; padding:14px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color:#fff; border:none; border-radius:12px;
+      font-size:0.95rem; font-weight:700; cursor:pointer;
+      transition:.15s; box-shadow:0 4px 16px rgba(99,102,241,0.35);
+    }
+    .btn-next:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(99,102,241,0.5); }
+    .btn-next:disabled { opacity:.3; cursor:default; transform:none; }
+
+    /* ── 결과 화면 ── */
+    .result-header { text-align:center; margin-bottom:40px; }
+    .result-emoji { font-size:3.5rem; margin-bottom:12px; }
+    .result-grade {
+      font-size:1.5rem; font-weight:900; margin-bottom:6px;
+    }
+    .result-total {
+      font-size:3.5rem; font-weight:900;
+      background:linear-gradient(135deg,#818cf8,#34d399,#fbbf24);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      margin-bottom:8px;
+    }
+    .result-desc { color:#64748b; font-size:0.9rem; }
+
+    /* 레이더 차트 */
+    .chart-wrap {
+      background: var(--card); border:1px solid var(--border);
+      border-radius:20px; padding:28px; margin-bottom:24px;
+      display:flex; flex-direction:column; align-items:center; gap:16px;
+    }
+    .chart-title { font-weight:700; color:#94a3b8; font-size:0.85rem; letter-spacing:1px; align-self:flex-start; }
+    canvas#radar { max-width:300px; }
+
+    /* 카테고리 점수 카드 */
+    .score-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+    .score-card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:16px; padding:18px 14px; text-align:center;
+    }
+    .sc-label { font-size:0.72rem; color:#64748b; margin-bottom:8px; }
+    .sc-num { font-size:1.8rem; font-weight:900; margin-bottom:4px; }
+    .sc-avg { font-size:0.7rem; color:#475569; }
+    .sc-bar-wrap { height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; margin-top:10px; }
+    .sc-bar { height:100%; border-radius:3px; transition: width 1s ease; }
+    .sc-self  .sc-num { color:#818cf8; } .sc-self  .sc-bar { background:#6366f1; }
+    .sc-inter .sc-num { color:#34d399; } .sc-inter .sc-bar { background:#10b981; }
+    .sc-pos   .sc-num { color:#fbbf24; } .sc-pos   .sc-bar { background:#f59e0b; }
+
+    /* 판정 등급표 */
+    .grade-table {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:16px; overflow:hidden; margin-bottom:24px;
+    }
+    .grade-row {
+      display:flex; align-items:center; padding:12px 20px; gap:16px;
+      border-bottom:1px solid rgba(255,255,255,0.04);
+      transition: background .15s;
+    }
+    .grade-row:last-child { border-bottom:none; }
+    .grade-row.current { background: rgba(99,102,241,0.12); }
+    .grade-range { width:110px; font-size:0.82rem; font-weight:700; color:#94a3b8; }
+    .grade-label { flex:1; font-size:0.85rem; }
+    .grade-row.current .grade-label { color:#a5b4fc; font-weight:700; }
+    .grade-marker {
+      width:8px; height:8px; border-radius:50%; background:#6366f1;
+      box-shadow: 0 0 8px #6366f1;
+      display:none;
+    }
+    .grade-row.current .grade-marker { display:block; }
+
+    .btn-retry {
+      width:100%; padding:16px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid var(--border);
+      color:#94a3b8; border-radius:14px;
+      font-size:0.95rem; font-weight:600; cursor:pointer;
+      transition:.15s;
+    }
+    .btn-retry:hover { background:rgba(255,255,255,0.1); color:#e2e8f0; }
+
+    @media (max-width:480px) {
+      .info-grid { grid-template-columns:1fr; }
+      .score-cards { grid-template-columns:1fr; }
+      .choices { grid-template-columns:repeat(5,1fr); gap:6px; }
+      .choice-circle { width:30px; height:30px; font-size:0.85rem; }
+      .choice-label { font-size:0.55rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="bg-glow"></div>
+
+<div class="wrap">
+
+  <!-- ── 인트로 ── -->
+  <div class="screen active" id="screen-intro">
+    <div class="intro-badge"><span></span> RQ DIAGNOSIS</div>
+    <h1 class="intro-title">
+      나의 <span class="highlight">회복탄력성</span>은<br>얼마나 될까요?
+    </h1>
+    <p class="intro-desc">
+      역경과 어려움을 딛고 일어서는 힘, <strong>회복탄력성(Resilience Quotient)</strong>을 측정합니다.<br>
+      53개의 문항에 솔직하게 답해주세요. 소요 시간은 약 5~10분입니다.
+    </p>
+
+    <div class="info-grid">
+      <div class="info-card"><div class="ic-num">53</div><div class="ic-lbl">문항 수</div></div>
+      <div class="info-card"><div class="ic-num">3</div><div class="ic-lbl">측정 영역</div></div>
+      <div class="info-card"><div class="ic-num">265</div><div class="ic-lbl">만점</div></div>
+    </div>
+
+    <div class="category-list">
+      <div class="cat-item">
+        <div class="cat-dot"></div>
+        <div>
+          <div class="cat-name">자기조절능력</div>
+          <div class="cat-range">1번 ~ 18번 · 평균 64점</div>
+        </div>
+      </div>
+      <div class="cat-item">
+        <div class="cat-dot"></div>
+        <div>
+          <div class="cat-name">대인관계능력</div>
+          <div class="cat-range">19번 ~ 36번 · 평균 68점</div>
+        </div>
+      </div>
+      <div class="cat-item">
+        <div class="cat-dot"></div>
+        <div>
+          <div class="cat-name">긍 정 성</div>
+          <div class="cat-range">37번 ~ 53번 · 평균 63점</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-start" onclick="startTest()">진단 시작하기 →</button>
+  </div>
+
+  <!-- ── 진단 ── -->
+  <div class="screen" id="screen-test">
+    <div class="progress-bar-wrap">
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">1 / 53</div>
+    </div>
+
+    <div id="q-badge" class="q-category-badge badge-self">자기조절능력</div>
+    <div class="q-num" id="q-num">Q1</div>
+    <div class="q-text" id="q-text"></div>
+
+    <div class="choices" id="choices">
+      <button class="choice-btn" data-val="1" onclick="selectAnswer(1)">
+        <div class="choice-circle">1</div>
+        <div class="choice-label">전혀<br>그렇지<br>않다</div>
+      </button>
+      <button class="choice-btn" data-val="2" onclick="selectAnswer(2)">
+        <div class="choice-circle">2</div>
+        <div class="choice-label">그렇지<br>않다</div>
+      </button>
+      <button class="choice-btn" data-val="3" onclick="selectAnswer(3)">
+        <div class="choice-circle">3</div>
+        <div class="choice-label">보통<br>이다</div>
+      </button>
+      <button class="choice-btn" data-val="4" onclick="selectAnswer(4)">
+        <div class="choice-circle">4</div>
+        <div class="choice-label">어느 정도<br>그렇다</div>
+      </button>
+      <button class="choice-btn" data-val="5" onclick="selectAnswer(5)">
+        <div class="choice-circle">5</div>
+        <div class="choice-label">매우<br>그렇다</div>
+      </button>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-prev" id="btn-prev" onclick="prevQ()">← 이전</button>
+      <button class="btn-next" id="btn-next" onclick="nextQ()" disabled>다음 →</button>
+    </div>
+  </div>
+
+  <!-- ── 결과 ── -->
+  <div class="screen" id="screen-result">
+    <div class="result-header">
+      <div class="result-emoji" id="result-emoji">💪</div>
+      <div class="result-grade" id="result-grade"></div>
+      <div class="result-total" id="result-total"></div>
+      <div class="result-desc" id="result-desc"></div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-title">영역별 분석</div>
+      <canvas id="radar" width="300" height="270"></canvas>
+    </div>
+
+    <div class="score-cards">
+      <div class="score-card sc-self">
+        <div class="sc-label">자기조절능력</div>
+        <div class="sc-num" id="score-self">-</div>
+        <div class="sc-avg">평균 64점</div>
+        <div class="sc-bar-wrap"><div class="sc-bar" id="bar-self" style="width:0%"></div></div>
+      </div>
+      <div class="score-card sc-inter">
+        <div class="sc-label">대인관계능력</div>
+        <div class="sc-num" id="score-inter">-</div>
+        <div class="sc-avg">평균 68점</div>
+        <div class="sc-bar-wrap"><div class="sc-bar" id="bar-inter" style="width:0%"></div></div>
+      </div>
+      <div class="score-card sc-pos">
+        <div class="sc-label">긍정성</div>
+        <div class="sc-num" id="score-pos">-</div>
+        <div class="sc-avg">평균 63점</div>
+        <div class="sc-bar-wrap"><div class="sc-bar" id="bar-pos" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="grade-table" id="grade-table"></div>
+
+    <button class="btn-retry" onclick="retryTest()">↩ 다시 진단하기</button>
+  </div>
+
+</div>
+
+<script>
+/* ── 문항 데이터 ── */
+const QUESTIONS = [
+  // 자기조절능력 1-18
+  { cat:'self',  rev:false, text:'나는 어려운 일이 닥쳤을 때 감정을 통제할 수 있다' },
+  { cat:'self',  rev:false, text:'내가 무슨 생각을 하면, 그 생각이 내 기분에 어떤 영향을 미칠지 잘 알아챈다' },
+  { cat:'self',  rev:false, text:'논쟁거리가 되는 문제를 가족이나 친구들과 토론할 때 내 감정을 잘 통제할 수 있다' },
+  { cat:'self',  rev:true,  text:'집중해야 할 중요한 일이 생기면 신바람이 나기보다는 더 스트레스를 받는 편이다' },
+  { cat:'self',  rev:true,  text:'나는 내 감정에 잘 휘말린다' },
+  { cat:'self',  rev:true,  text:'때때로 내 감정적인 문제 때문에 학교나 직장에서 공부하거나 일할 때 집중하기 어렵다' },
+  { cat:'self',  rev:false, text:'당장 해야 할 일이 있으면 나는 어떠한 유혹이나 방해도 잘 이겨내고 할 일을 한다' },
+  { cat:'self',  rev:false, text:'아무리 당황스럽고 어려운 상황이 닥쳐도, 내가 어떤 생각을 하고 있는지 스스로 잘 안다' },
+  { cat:'self',  rev:false, text:'누군가가 나에게 화를 낼 경우 나는 우선 그 사람의 의견을 듣는다' },
+  { cat:'self',  rev:true,  text:'일이 생각대로 잘 안 풀리면 쉽게 포기하는 편이다' },
+  { cat:'self',  rev:true,  text:'평소 경제적인 소비나 지출 규모에 대해 별다른 계획 없이 지낸다' },
+  { cat:'self',  rev:true,  text:'미리 계획을 세우기보다는 즉흥적으로 일을 처리하는 편이다' },
+  { cat:'self',  rev:false, text:'문제가 생기면 여러 가지 가능한 해결방안에 대해 먼저 생각한 후에 해결하려고 노력한다' },
+  { cat:'self',  rev:false, text:'어려운 일이 생기면 원인이 무엇인지 신중하게 생각한 후에 문제를 해결하려고 노력한다' },
+  { cat:'self',  rev:false, text:'나는 대부분의 상황에서 문제의 원인을 잘 알고 있다고 믿는다' },
+  { cat:'self',  rev:true,  text:'나는 사건이나 상황을 잘 파악하지 못한다는 이야기를 종종 듣는다' },
+  { cat:'self',  rev:true,  text:'문제가 생기면 나는 성급하게 결론을 내린다는 이야기를 종종 듣는다' },
+  { cat:'self',  rev:true,  text:'어려운 일이 생기면, 그 원인을 완전히 이해하지 못했다 하더라도 일단 빨리 해결하는 것이 좋다고 생각한다' },
+  // 대인관계능력 19-36
+  { cat:'inter', rev:false, text:'나는 분위기나 대화상대에 따라 대화를 잘 이끌어 갈 수 있다' },
+  { cat:'inter', rev:false, text:'나는 재치있는 농담을 잘 한다' },
+  { cat:'inter', rev:false, text:'나는 내가 표현하고자 하는 바에 대한 적절한 문구나 단어를 잘 찾아낸다' },
+  { cat:'inter', rev:true,  text:'나는 윗사람과 대화하는 것이 부담스럽다' },
+  { cat:'inter', rev:true,  text:'나는 대화 중에 다른 생각을 하느라 대화 내용을 놓칠 때가 종종 있다' },
+  { cat:'inter', rev:true,  text:'대화를 할 때 하고 싶은 말을 다하지 못하고 주저할 때가 종종 있다' },
+  { cat:'inter', rev:false, text:'사람들의 얼굴표정을 보면 어떤 감정인지 알 수 있다' },
+  { cat:'inter', rev:false, text:'슬퍼하거나 화를 내거나 당황하는 사람을 보면 그들이 어떤 생각을 하는지 알 수 있다' },
+  { cat:'inter', rev:false, text:'동료가 화를 낼 경우 나는 그 이유를 꽤 잘 아는 편이다' },
+  { cat:'inter', rev:true,  text:'나는 사람들의 행동방식을 때로 이해하기 힘들다' },
+  { cat:'inter', rev:true,  text:'친한 친구나 애인 혹은 배우자로부터 "당신은 나를 이해 못해"라는 말을 종종 듣는다' },
+  { cat:'inter', rev:true,  text:'동료와 친구들은 내가 자기 말을 잘 듣지 않는다고 한다' },
+  { cat:'inter', rev:false, text:'나는 내 주변 사람들로부터 사랑과 관심을 받고 있다' },
+  { cat:'inter', rev:false, text:'나는 내 친구들을 정말로 좋아한다' },
+  { cat:'inter', rev:false, text:'내 주변사람들은 내 기분을 잘 이해한다' },
+  { cat:'inter', rev:true,  text:'서로 도움을 주고받는 친구가 별로 없는 편이다' },
+  { cat:'inter', rev:true,  text:'나와 정기적으로 만나는 사람들은 대부분 나를 싫어하게 된다' },
+  { cat:'inter', rev:true,  text:'서로 마음을 터놓고 얘기할 수 있는 친구가 거의 없다' },
+  // 긍정성 37-53
+  { cat:'pos',   rev:false, text:'열심히 일하면 언제나 보답이 있으리라고 생각한다' },
+  { cat:'pos',   rev:false, text:'맞든 아니든, "아무리 어려운 문제라도 해결할 수 있다"고 일단 믿는 것이 좋다고 생각한다' },
+  { cat:'pos',   rev:false, text:'어려운 상황이 닥쳐도 나는 모든 일이 다 잘 해결될 거라고 확신한다' },
+  { cat:'pos',   rev:true,  text:'내가 어떤 일을 마치고 나면, 주변사람들이 부정적인 평가를 할까봐 걱정한다' },
+  { cat:'pos',   rev:true,  text:'나에게 일어나는 대부분의 문제들은 어쩔 수 없는 상황에 의해 발생한다고 믿는다' },
+  { cat:'pos',   rev:true,  text:'누가 나의 미래에 대해 물어보면, 성공한 나의 모습을 상상하기 힘들다' },
+  { cat:'pos',   rev:false, text:'내 삶은 내가 생각하는 이상적인 삶에 가깝다' },
+  { cat:'pos',   rev:false, text:'내 인생의 여러 가지 조건들은 만족스럽다' },
+  { cat:'pos',   rev:false, text:'나는 내 삶에 만족한다' },
+  { cat:'pos',   rev:false, text:'나는 내 삶에서 중요하다고 생각한 것들은 다 갖고 있다' },
+  { cat:'pos',   rev:false, text:'나는 다시 태어나도 나의 현재 삶을 다시 살고 싶다' },
+  { cat:'pos',   rev:false, text:'나는 다양한 종류의 많은 사람들에게 고마움을 느낀다' },
+  { cat:'pos',   rev:false, text:'내가 고맙게 여기는 것들을 모두 적는다면, 아주 긴 목록이 될 것이다' },
+  { cat:'pos',   rev:false, text:'나이가 들어갈수록 내 삶의 일부가 된 사람, 사건, 생활에 대해 감사하는 마음이 더 커져간다' },
+  { cat:'pos',   rev:true,  text:'나는 감사해야 할 것이 별로 없다' },
+  { cat:'pos',   rev:true,  text:'세상을 둘러볼 때, 내가 고마워 할 것은 별로 없다' },
+  { cat:'pos',   rev:true,  text:'사람이나 일에 대한 고마움을 한참 시간이 지난 후에야 겨우 느낀다' },
+];
+
+const GRADES = [
+  { min:220, max:999, label:'대단히 높은 수준',                   emoji:'🏆' },
+  { min:212, max:219, label:'상위 20% 수준',                      emoji:'🌟' },
+  { min:200, max:211, label:'일단 안심',                          emoji:'😊' },
+  { min:191, max:199, label:'평균 수준',                          emoji:'😐' },
+  { min:181, max:190, label:'노력 요망',                          emoji:'💪' },
+  { min:171, max:180, label:'사소한 부정적 사건에도 쉽게 영향 받는 나약한 존재', emoji:'😟' },
+  { min:0,   max:170, label:'깨지기 쉬운 유리 같은 존재 (치유 곤란)', emoji:'💔' },
+];
+
+const CAT_MAX = { self: 90, inter: 90, pos: 85 };
+
+/* ── 상태 ── */
+let current = 0;
+let answers = Array(53).fill(null);
+
+/* ── 화면 전환 ── */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function startTest() {
+  current = 0;
+  answers = Array(53).fill(null);
+  show('screen-test');
+  renderQ();
+}
+
+function retryTest() {
+  show('screen-intro');
+}
+
+/* ── 문항 렌더 ── */
+function renderQ() {
+  const q = QUESTIONS[current];
+  const total = QUESTIONS.length;
+
+  // 진행바
+  document.getElementById('progress-fill').style.width = ((current / total) * 100) + '%';
+  document.getElementById('progress-text').textContent = `${current + 1} / ${total}`;
+
+  // 카테고리 뱃지
+  const badge = document.getElementById('q-badge');
+  badge.className = 'q-category-badge';
+  const catMap = { self: ['badge-self','자기조절능력'], inter: ['badge-inter','대인관계능력'], pos: ['badge-pos','긍정성'] };
+  badge.classList.add(catMap[q.cat][0]);
+  badge.textContent = catMap[q.cat][1];
+
+  // 번호·역채점 표시
+  document.getElementById('q-num').textContent = `Q${current + 1}${q.rev ? '  (역채점 문항)' : ''}`;
+  document.getElementById('q-text').textContent = q.text;
+
+  // 선택지 복원
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.classList.remove('selected');
+    if (answers[current] !== null && parseInt(btn.dataset.val) === answers[current]) {
+      btn.classList.add('selected');
+    }
+  });
+
+  // 버튼 상태
+  document.getElementById('btn-prev').style.visibility = current === 0 ? 'hidden' : 'visible';
+  document.getElementById('btn-next').disabled = answers[current] === null;
+  document.getElementById('btn-next').textContent = current === total - 1 ? '결과 보기 →' : '다음 →';
+}
+
+function selectAnswer(val) {
+  answers[current] = val;
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseInt(btn.dataset.val) === val);
+  });
+  document.getElementById('btn-next').disabled = false;
+}
+
+function nextQ() {
+  if (answers[current] === null) return;
+  if (current < QUESTIONS.length - 1) { current++; renderQ(); }
+  else showResult();
+}
+
+function prevQ() {
+  if (current > 0) { current--; renderQ(); }
+}
+
+/* ── 채점 ── */
+function calcScore() {
+  let self = 0, inter = 0, pos = 0;
+  QUESTIONS.forEach((q, i) => {
+    const raw = answers[i] || 3;
+    const score = q.rev ? (6 - raw) : raw;
+    if (q.cat === 'self')  self  += score;
+    if (q.cat === 'inter') inter += score;
+    if (q.cat === 'pos')   pos   += score;
+  });
+  return { self, inter, pos, total: self + inter + pos };
+}
+
+/* ── 결과 화면 ── */
+function showResult() {
+  const s = calcScore();
+  const grade = GRADES.find(g => s.total >= g.min && s.total <= g.max) || GRADES[GRADES.length - 1];
+
+  document.getElementById('result-emoji').textContent = grade.emoji;
+  document.getElementById('result-grade').textContent = grade.label;
+  document.getElementById('result-total').textContent = s.total + '점';
+  document.getElementById('result-desc').textContent = `자기조절 ${s.self}점 · 대인관계 ${s.inter}점 · 긍정성 ${s.pos}점`;
+
+  document.getElementById('score-self').textContent  = s.self  + '점';
+  document.getElementById('score-inter').textContent = s.inter + '점';
+  document.getElementById('score-pos').textContent   = s.pos   + '점';
+
+  show('screen-result');
+
+  // 바 애니메이션
+  setTimeout(() => {
+    document.getElementById('bar-self').style.width  = (s.self  / CAT_MAX.self  * 100) + '%';
+    document.getElementById('bar-inter').style.width = (s.inter / CAT_MAX.inter * 100) + '%';
+    document.getElementById('bar-pos').style.width   = (s.pos   / CAT_MAX.pos   * 100) + '%';
+  }, 100);
+
+  // 등급표
+  const table = document.getElementById('grade-table');
+  table.innerHTML = GRADES.map(g => {
+    const isCurrent = s.total >= g.min && s.total <= g.max;
+    const rangeStr = g.max >= 999 ? `${g.min}점 이상` : g.min === 0 ? `170점 이하` : `${g.min}~${g.max}점`;
+    return `<div class="grade-row ${isCurrent ? 'current' : ''}">
+      <div class="grade-range">${rangeStr}</div>
+      <div class="grade-label">${g.label}</div>
+      <div class="grade-marker"></div>
+    </div>`;
+  }).join('');
+
+  // 레이더 차트
+  setTimeout(() => drawRadar(s), 150);
+}
+
+/* ── 레이더 차트 ── */
+function drawRadar(s) {
+  const canvas = document.getElementById('radar');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2 + 10;
+  const R = Math.min(W, H) / 2 - 40;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const labels = ['자기조절능력', '대인관계능력', '긍정성'];
+  const userVals   = [s.self / CAT_MAX.self, s.inter / CAT_MAX.inter, s.pos / CAT_MAX.pos];
+  const avgVals    = [64 / CAT_MAX.self,      68 / CAT_MAX.inter,      63 / CAT_MAX.pos];
+  const angles     = labels.map((_, i) => (Math.PI * 2 * i / 3) - Math.PI / 2);
+  const colors     = ['#6366f1', '#10b981', '#f59e0b'];
+
+  // 배경 웹
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 1;
+  [0.25, 0.5, 0.75, 1].forEach(r => {
+    ctx.beginPath();
+    angles.forEach((a, i) => {
+      const x = cx + Math.cos(a) * R * r;
+      const y = cy + Math.sin(a) * R * r;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.closePath();
+    ctx.stroke();
+  });
+
+  // 축
+  angles.forEach(a => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.stroke();
+  });
+
+  // 평균 영역
+  ctx.beginPath();
+  angles.forEach((a, i) => {
+    const x = cx + Math.cos(a) * R * avgVals[i];
+    const y = cy + Math.sin(a) * R * avgVals[i];
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // 사용자 영역
+  ctx.beginPath();
+  angles.forEach((a, i) => {
+    const x = cx + Math.cos(a) * R * userVals[i];
+    const y = cy + Math.sin(a) * R * userVals[i];
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.closePath();
+
+  // 그라디언트 채우기
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+  grad.addColorStop(0, 'rgba(99,102,241,0.4)');
+  grad.addColorStop(0.5, 'rgba(16,185,129,0.2)');
+  grad.addColorStop(1, 'rgba(245,158,11,0.1)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.strokeStyle = '#818cf8';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // 꼭짓점 점
+  angles.forEach((a, i) => {
+    const x = cx + Math.cos(a) * R * userVals[i];
+    const y = cy + Math.sin(a) * R * userVals[i];
+    ctx.beginPath();
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = colors[i];
+    ctx.shadowColor = colors[i];
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  });
+
+  // 라벨
+  ctx.font = '600 12px Noto Sans KR, sans-serif';
+  ctx.textAlign = 'center';
+  angles.forEach((a, i) => {
+    const dist = R + 26;
+    const x = cx + Math.cos(a) * dist;
+    const y = cy + Math.sin(a) * dist + 4;
+    ctx.fillStyle = colors[i];
+    ctx.fillText(labels[i], x, y);
+  });
+}
+
+/* ── 키보드 단축키 ── */
+document.addEventListener('keydown', e => {
+  const sc = document.getElementById('screen-test');
+  if (!sc.classList.contains('active')) return;
+  if (['1','2','3','4','5'].includes(e.key)) selectAnswer(parseInt(e.key));
+  if (e.key === 'Enter' && answers[current] !== null) nextQ();
+  if (e.key === 'ArrowLeft') prevQ();
+});
+</script>
+</body>
+</html>
