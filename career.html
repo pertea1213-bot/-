@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>생애경력설계 역량 진단</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+
+    /* ── Design-system tokens (dataviz palette) ── */
+    :root {
+      /* Surfaces */
+      --surface-page:  #0d0d0d;
+      --surface-chart: #1a1a19;
+      --surface-card:  rgba(255,255,255,0.045);
+      --border:        rgba(255,255,255,0.08);
+
+      /* Ink */
+      --ink-primary:   #ffffff;
+      --ink-secondary: #c3c2b7;
+      --ink-muted:     #898781;
+      --gridline:      #2c2c2a;
+      --baseline:      #383835;
+
+      /* Categorical slots (dark) */
+      --s1: #3987e5;  /* blue     — 진로관리 */
+      --s2: #199e70;  /* aqua     — 자아이해 */
+      --s3: #c98500;  /* yellow   — 진로탐색 */
+      --s4: #008300;  /* green    — 직업적응 */
+      --s5: #9085e9;  /* violet   — 관계형성 */
+      --s6: #e66767;  /* red      — 학습역량 */
+      --s7: #d55181;  /* magenta  — 재정관리 */
+      --s8: #d95926;  /* orange   — 건강관리 */
+
+      /* Status (always fixed) */
+      --good:     #0ca30c;
+      --warning:  #fab219;
+      --serious:  #ec835a;
+      --critical: #d03b3b;
+
+      /* Sequential blue ramp (현재점수 fill) */
+      --seq-fill: rgba(57,135,229,0.13);
+
+      /* Gap analysis neutral */
+      --diverge-mid: #383835;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root:where(:not([data-theme="dark"])) {
+        --surface-page:  #f9f9f7;
+        --surface-chart: #fcfcfb;
+        --surface-card:  rgba(0,0,0,0.035);
+        --border:        rgba(0,0,0,0.09);
+        --ink-primary:   #0b0b0b;
+        --ink-secondary: #52514e;
+        --ink-muted:     #898781;
+        --gridline:      #e1e0d9;
+        --baseline:      #c3c2b7;
+        --s1: #2a78d6; --s2: #1baf7a; --s3: #eda100; --s4: #008300;
+        --s5: #4a3aa7; --s6: #e34948; --s7: #e87ba4; --s8: #eb6834;
+        --seq-fill: rgba(42,120,214,0.10);
+        --diverge-mid: #f0efec;
+      }
+    }
+    :root[data-theme="light"] {
+      --surface-page:  #f9f9f7;
+      --surface-chart: #fcfcfb;
+      --surface-card:  rgba(0,0,0,0.035);
+      --border:        rgba(0,0,0,0.09);
+      --ink-primary:   #0b0b0b;
+      --ink-secondary: #52514e;
+      --ink-muted:     #898781;
+      --gridline:      #e1e0d9;
+      --baseline:      #c3c2b7;
+      --s1: #2a78d6; --s2: #1baf7a; --s3: #eda100; --s4: #008300;
+      --s5: #4a3aa7; --s6: #e34948; --s7: #e87ba4; --s8: #eb6834;
+      --seq-fill: rgba(42,120,214,0.10);
+      --diverge-mid: #f0efec;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--surface-page);
+      color: var(--ink-primary);
+      font-family: 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      transition: background 0.25s, color 0.25s;
+    }
+
+    /* ── Page glow (decorative) ── */
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 65% 45% at 10% 0%,  rgba(57,135,229,0.09) 0%, transparent 70%),
+        radial-gradient(ellipse 45% 35% at 90% 95%, rgba(144,133,233,0.06) 0%, transparent 70%);
+    }
+
+    .wrap { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 48px 20px 88px; }
+
+    /* ── Screen switching ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Theme toggle ── */
+    .theme-btn {
+      position: fixed; top: 16px; right: 16px; z-index: 99;
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--surface-card); border: 1px solid var(--border);
+      color: var(--ink-secondary); cursor: pointer; font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .theme-btn:hover { border-color: var(--s1); color: var(--s1); }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(57,135,229,0.14); border: 1px solid rgba(57,135,229,0.28);
+      border-radius: 50px; padding: 6px 18px;
+      font-size: 0.72rem; letter-spacing: 1.5px; color: #86b6ef;
+      margin-bottom: 24px;
+    }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--s1); animation: blink 1.6s infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* ── Intro ── */
+    .page-title {
+      font-size: clamp(1.9rem, 5vw, 3rem);
+      font-weight: 900; line-height: 1.2; margin-bottom: 18px;
+    }
+    .grad {
+      background: linear-gradient(90deg, #3987e5, #86b6ef 45%, #9085e9);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .lead { color: var(--ink-secondary); line-height: 1.9; font-size: 0.95rem; margin-bottom: 40px; }
+
+    .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 44px; }
+    .stat-box {
+      flex: 1; min-width: 110px;
+      background: var(--surface-card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px 14px; text-align: center;
+    }
+    .stat-num { font-size: 1.75rem; font-weight: 900; margin-bottom: 4px; }
+    .stat-lbl { font-size: 0.7rem; color: var(--ink-muted); }
+
+    /* ── Form ── */
+    .form-block { margin-bottom: 28px; }
+    .form-lbl { font-size: 0.82rem; font-weight: 700; color: var(--ink-secondary); margin-bottom: 12px; display: block; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 8px 18px; border-radius: 50px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--ink-muted); cursor: pointer; font-size: 0.84rem;
+      font-family: inherit; transition: all 0.18s;
+    }
+    .chip:hover { border-color: rgba(57,135,229,0.5); color: #86b6ef; }
+    .chip.sel {
+      background: rgba(57,135,229,0.18); border-color: var(--s1); color: #cde2fb;
+    }
+
+    .target-block {
+      background: rgba(57,135,229,0.07); border: 1px solid rgba(57,135,229,0.2);
+      border-radius: 14px; padding: 20px 22px; margin-bottom: 28px;
+    }
+    .target-block label { font-size: 0.82rem; font-weight: 700; color: #86b6ef; display: block; margin-bottom: 12px; }
+    .target-slider { width: 100%; accent-color: var(--s1); margin-bottom: 8px; cursor: pointer; }
+    .target-val { text-align: center; font-size: 1.3rem; font-weight: 900; color: var(--s1); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 13px 30px; border-radius: 10px; border: none;
+      cursor: pointer; font-family: inherit; font-size: 0.92rem; font-weight: 700;
+      transition: all 0.18s;
+    }
+    .btn-primary {
+      background: var(--s1); color: #fff;
+      box-shadow: 0 4px 18px rgba(57,135,229,0.3);
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: 0 7px 24px rgba(57,135,229,0.38); }
+    .btn-primary:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn-ghost { background: transparent; color: var(--ink-secondary); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: var(--ink-primary); }
+    .btn-row { display: flex; gap: 12px; margin-top: 32px; align-items: center; }
+
+    /* ── Progress ── */
+    .prog-meta { display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--ink-muted); margin-bottom: 8px; }
+    .prog-track { background: var(--gridline); border-radius: 99px; height: 3px; margin-bottom: 36px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 99px; background: var(--s1); transition: width 0.4s ease; }
+
+    /* ── Domain header ── */
+    .dom-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 14px; border-radius: 50px; font-size: 0.72rem; font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .dom-name { font-size: 1.45rem; font-weight: 900; margin-bottom: 8px; }
+    .dom-desc { font-size: 0.84rem; color: var(--ink-secondary); line-height: 1.75; margin-bottom: 28px; }
+
+    /* ── Question cards ── */
+    .q-card {
+      background: var(--surface-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px 24px; margin-bottom: 14px;
+      transition: border-color 0.2s;
+    }
+    .q-card.answered { border-color: rgba(57,135,229,0.22); }
+    .q-num { font-size: 0.72rem; font-weight: 700; color: var(--ink-muted); margin-bottom: 8px; letter-spacing: 0.5px; }
+    .q-text { font-size: 0.93rem; line-height: 1.75; margin-bottom: 20px; }
+
+    .scale-wrap { display: flex; align-items: center; gap: 10px; }
+    .scale-anchor { font-size: 0.68rem; color: var(--ink-muted); line-height: 1.4; flex-shrink: 0; text-align: center; }
+    .scale-btns { display: flex; gap: 6px; flex: 1; justify-content: space-between; }
+    .sc-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--ink-muted); cursor: pointer; font-size: 0.84rem; font-weight: 700;
+      font-family: inherit; transition: all 0.15s; flex-shrink: 0;
+      /* Hit target ≥ mark size per marks spec */
+    }
+    .sc-btn:hover { border-color: var(--s1); color: var(--s1); }
+    .sc-btn.sel {
+      /* 2px surface ring on overlapping marks */
+      outline: 2px solid var(--surface-page); outline-offset: 1px;
+    }
+    @media (max-width: 480px) { .sc-btn { width: 34px; height: 34px; font-size: 0.78rem; } }
+
+    /* ── Loading ── */
+    .loading {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(13,13,13,0.82); align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    }
+    .loading.on { display: flex; }
+    .spin { width: 40px; height: 40px; border: 2.5px solid var(--gridline); border-top-color: var(--s1); border-radius: 50%; animation: spin 0.75s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result ── */
+    .result-head { text-align: center; margin-bottom: 36px; }
+    .result-title { font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 900; margin-bottom: 10px; }
+    .result-sub { font-size: 0.84rem; color: var(--ink-muted); }
+
+    /* Hero score */
+    .hero {
+      background: var(--surface-card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 32px 24px; text-align: center; margin-bottom: 28px;
+    }
+    .hero-num { font-size: 4rem; font-weight: 900; line-height: 1; }
+    .hero-denom { font-size: 1rem; color: var(--ink-muted); margin-bottom: 8px; }
+    .hero-tag { display: inline-block; padding: 4px 14px; border-radius: 50px; font-size: 0.78rem; font-weight: 700; margin-top: 6px; }
+
+    /* Chart wrapper */
+    .chart-panel {
+      background: var(--surface-chart); border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px; margin-bottom: 28px;
+    }
+    .chart-panel h3 { font-size: 0.82rem; font-weight: 700; color: var(--ink-muted); letter-spacing: 1px; margin-bottom: 20px; }
+    .radar-wrap { max-width: 440px; margin: 0 auto; }
+
+    /* Domain result grid */
+    .dom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+    @media (max-width: 560px) { .dom-grid { grid-template-columns: 1fr; } }
+
+    .dom-card {
+      background: var(--surface-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 18px;
+    }
+    .dom-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .dom-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dom-card-name { font-size: 0.88rem; font-weight: 700; }
+    .dom-card-score { margin-left: auto; font-size: 0.9rem; font-weight: 900; }
+
+    /* Bar (≤24px thick, 4px rounded data-end per mark spec) */
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 0.72rem; color: var(--ink-muted); }
+    .bar-lbl { width: 30px; flex-shrink: 0; }
+    .bar-track { flex: 1; height: 10px; border-radius: 99px; background: var(--gridline); overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; /* 4px rounded data-end */ transition: width 0.7s 0.1s ease; }
+    .bar-val { width: 28px; text-align: right; flex-shrink: 0; }
+
+    /* Status gap badge (always icon+label per spec) */
+    .gap-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; font-weight: 700; margin-top: 4px; }
+
+    /* Insight section */
+    .insight-section { margin-bottom: 28px; }
+    .insight-title { font-size: 1rem; font-weight: 900; margin-bottom: 16px; }
+    .insight-card {
+      border-left: 3px solid; border-radius: 0 12px 12px 0;
+      padding: 14px 18px; margin-bottom: 10px;
+      background: var(--surface-card);
+    }
+    .insight-card h4 { font-size: 0.84rem; font-weight: 700; margin-bottom: 5px; }
+    .insight-card p { font-size: 0.8rem; color: var(--ink-secondary); line-height: 1.75; }
+
+    /* Legend (always for ≥2 series) */
+    .legend { display: flex; gap: 20px; justify-content: center; margin-top: 16px; font-size: 0.78rem; color: var(--ink-secondary); }
+    .legend-item { display: flex; align-items: center; gap: 7px; }
+    .legend-line { width: 20px; height: 2px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 40px; }
+
+    hr.div { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+    @media print {
+      .bg-glow, .theme-btn, .actions, .btn-row { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .wrap { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+<button class="theme-btn" onclick="toggleTheme()" title="테마 전환">☀</button>
+
+<div class="loading" id="loading">
+  <div class="spin"></div>
+  <p style="font-size:0.82rem;color:var(--ink-secondary);">결과를 분석하는 중…</p>
+</div>
+
+<div class="wrap">
+
+  <!-- ══════════════════════════════════
+       SCREEN 1 · INTRO
+  ══════════════════════════════════ -->
+  <div class="screen active" id="s-intro">
+    <div class="badge"><span class="badge-dot"></span>CAREER COMPETENCY DIAGNOSIS</div>
+    <h1 class="page-title">생애경력설계<br><span class="grad">역량 진단</span></h1>
+    <p class="lead">
+      8개 핵심 역량 영역, 총 40개 문항으로 지금 나의 진로개발 역량 수준을 진단합니다.<br>
+      목표 점수와의 <strong>GAP 분석</strong>과 방사형 차트로 강점·개발 영역을 한눈에 확인하세요.
+    </p>
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-num" style="color:var(--s1)">8</div><div class="stat-lbl">진단 영역</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--s2)">40</div><div class="stat-lbl">진단 문항</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--s5)">7점</div><div class="stat-lbl">리커트 척도</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:var(--s8)">8분</div><div class="stat-lbl">예상 소요시간</div></div>
+    </div>
+    <button class="btn btn-primary" onclick="go('s-info')">진단 시작하기 →</button>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SCREEN 2 · BASIC INFO
+  ══════════════════════════════════ -->
+  <div class="screen" id="s-info">
+    <div class="badge"><span class="badge-dot"></span>기초 정보 입력 · STEP 1 / 2</div>
+    <h2 style="font-size:1.7rem;font-weight:900;margin-bottom:8px;">기본 정보를 입력해 주세요</h2>
+    <p class="lead" style="margin-bottom:32px;">선택 정보는 맞춤형 결과 해석에만 활용됩니다.</p>
+
+    <div class="form-block">
+      <span class="form-lbl">연령대</span>
+      <div class="chips" id="g-age">
+        <button class="chip" onclick="pick(this,'age')">20대</button>
+        <button class="chip" onclick="pick(this,'age')">30대</button>
+        <button class="chip" onclick="pick(this,'age')">40대</button>
+        <button class="chip" onclick="pick(this,'age')">50대</button>
+        <button class="chip" onclick="pick(this,'age')">60대 이상</button>
+      </div>
+    </div>
+
+    <div class="form-block">
+      <span class="form-lbl">현재 고용 상태</span>
+      <div class="chips" id="g-employ">
+        <button class="chip" onclick="pick(this,'employ')">재직 중</button>
+        <button class="chip" onclick="pick(this,'employ')">구직 중</button>
+        <button class="chip" onclick="pick(this,'employ')">자영업·프리랜서</button>
+        <button class="chip" onclick="pick(this,'employ')">은퇴·경력 단절</button>
+      </div>
+    </div>
+
+    <div class="form-block">
+      <span class="form-lbl">진단 목적</span>
+      <div class="chips" id="g-purpose">
+        <button class="chip" onclick="pick(this,'purpose')">이직·전직 준비</button>
+        <button class="chip" onclick="pick(this,'purpose')">경력 개발 계획</button>
+        <button class="chip" onclick="pick(this,'purpose')">창업·독립</button>
+        <button class="chip" onclick="pick(this,'purpose')">은퇴 후 설계</button>
+        <button class="chip" onclick="pick(this,'purpose')">자기 탐색</button>
+      </div>
+    </div>
+
+    <div class="target-block">
+      <label>목표 점수 설정 (1 ~ 7점 척도)</label>
+      <input type="range" class="target-slider" id="targetSlider" min="1" max="7" step="0.5" value="5.5"
+             oninput="updateTarget(this.value)">
+      <div class="target-val" id="targetVal">5.5점</div>
+      <p style="font-size:0.74rem;color:var(--ink-muted);text-align:center;margin-top:8px;">
+        GAP 분석 시 이 점수를 목표 기준으로 사용합니다.
+      </p>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="go('s-intro')">← 이전</button>
+      <button class="btn btn-primary" id="btn-start" onclick="startQ()" disabled>진단 시작 →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SCREEN 3 · QUESTIONS
+  ══════════════════════════════════ -->
+  <div class="screen" id="s-q">
+    <div class="prog-meta">
+      <span id="prog-label">영역 1 / 8</span>
+      <span id="prog-pct">0%</span>
+    </div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+
+    <div id="dom-header"></div>
+    <div id="q-list"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btn-prev" onclick="prevDom()" style="display:none">← 이전</button>
+      <button class="btn btn-primary" id="btn-next" onclick="nextDom()" disabled>다음 →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       SCREEN 4 · RESULT
+  ══════════════════════════════════ -->
+  <div class="screen" id="s-result">
+    <div class="result-head">
+      <div class="badge" style="display:inline-flex;margin:0 auto 16px;"><span class="badge-dot"></span>진단 완료</div>
+      <h2 class="result-title">나의 <span class="grad">경력역량 진단 결과</span></h2>
+      <p class="result-sub" id="result-sub"></p>
+    </div>
+
+    <div class="hero">
+      <div class="hero-num grad" id="hero-num">—</div>
+      <div class="hero-denom">/ 7.0점</div>
+      <div>
+        <span class="hero-tag" id="hero-tag"></span>
+      </div>
+    </div>
+
+    <!-- Radar chart (2 series → legend required) -->
+    <div class="chart-panel">
+      <h3>RADAR — 영역별 현재 점수 vs 목표</h3>
+      <div class="radar-wrap"><canvas id="radarChart"></canvas></div>
+      <div class="legend" id="chart-legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--s1)"></div>
+          <span>현재 점수</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line" style="border-top:2px dashed var(--ink-muted)"></div>
+          <span id="legend-target">목표</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Domain bar cards -->
+    <div class="dom-grid" id="dom-grid"></div>
+
+    <!-- Insight -->
+    <div class="insight-section" id="insight-section">
+      <h3 class="insight-title">맞춤형 역량 개발 제안</h3>
+    </div>
+
+    <hr class="div">
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="retake()">다시 진단하기</button>
+      <button class="btn btn-primary" onclick="window.print()">결과 인쇄·저장</button>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+/* ════════════════════════════════════════════════
+   DATA — 8 domains × 5 questions = 40 items
+   Categorical slots follow palette.md order
+════════════════════════════════════════════════ */
+const DOMAINS = [
+  {
+    id:'f1', slot:'--s1', name:'진로관리',
+    desc:'목표 설정·전략 수립·진로 계획의 실행과 점검 역량',
+    qs:[
+      '나는 교육·고용 목표를 단기·중기·장기로 나누어 구체적으로 세우고 있다.',
+      '나는 직업 목표 달성을 위한 전략이 효과적인지 주기적으로 점검한다.',
+      '나는 경력 개발을 위한 구체적인 실행 계획을 갖고 있다.',
+      '나는 직업 시장 변화에 따라 나의 경력 목표를 유연하게 조정한다.',
+      '나는 진로 계획을 정기적으로 검토하고 필요 시 수정한다.'
+    ]
+  },
+  {
+    id:'f2', slot:'--s2', name:'자아이해',
+    desc:'강점·약점 파악, 직업 가치관, 성격과 흥미의 직업적 연결 역량',
+    qs:[
+      '나는 나의 강점과 약점을 정확하게 파악하고 있다.',
+      '나는 내가 중요하게 여기는 직업 가치관을 명확히 알고 있다.',
+      '나는 나의 관심 분야와 흥미를 직업과 연결할 수 있다.',
+      '나는 나의 성격이 어떤 직업 환경에 적합한지 알고 있다.',
+      '나는 자아개념이 진로 선택에 미치는 영향을 인식하고 있다.'
+    ]
+  },
+  {
+    id:'f3', slot:'--s3', name:'진로탐색',
+    desc:'직업 정보 수집, 시장 트렌드 파악, 능동적 탐색 활동 역량',
+    qs:[
+      '나는 관심 있는 직업에 대한 충분한 정보를 갖고 있다.',
+      '나는 직업 시장의 최신 트렌드를 지속적으로 파악한다.',
+      '나는 새로운 직업이나 분야를 적극적으로 탐색한다.',
+      '나는 다양한 경로(온라인·기관·지인)를 통해 직업 정보를 수집한다.',
+      '나는 관심 직종 종사자와 직접 만나 정보를 나눈 경험이 있다.'
+    ]
+  },
+  {
+    id:'f4', slot:'--s4', name:'직업적응',
+    desc:'변화 대응력, 문제 해결, 협업 능력, 실패로부터의 학습 역량',
+    qs:[
+      '나는 업무 환경의 변화에 빠르게 적응하는 편이다.',
+      '나는 예상치 못한 상황에서도 침착하게 대처한다.',
+      '나는 새로운 기술이나 도구를 배우는 것에 거부감이 없다.',
+      '나는 직장 내 다양한 구성원들과 협력하며 일할 수 있다.',
+      '나는 실패 경험을 통해 더 나은 방법을 찾아 적용한다.'
+    ]
+  },
+  {
+    id:'f5', slot:'--s5', name:'관계형성',
+    desc:'전문 네트워크 구축, 커뮤니티 참여, 멘토링 활용 역량',
+    qs:[
+      '나는 진로에 도움이 될 수 있는 사람들과 관계를 꾸준히 유지한다.',
+      '나는 직업 관련 커뮤니티나 학습 모임에 적극적으로 참여한다.',
+      '나는 다양한 분야의 사람들과 교류하려고 의식적으로 노력한다.',
+      '나는 멘토나 조언자의 도움을 필요할 때 적극적으로 구한다.',
+      '나는 나의 직업적 강점과 관심사를 다른 사람에게 효과적으로 전달한다.'
+    ]
+  },
+  {
+    id:'f6', slot:'--s6', name:'학습역량',
+    desc:'지속적 학습 습관, 최신 지식 유지, 배운 것의 실무 적용 역량',
+    qs:[
+      '나는 직업 역량 향상을 위해 지속적으로 학습한다.',
+      '나는 내 분야의 최신 지식과 변화를 유지하려고 노력한다.',
+      '나는 새로운 것을 배우는 것 자체에 흥미를 느낀다.',
+      '나는 공식·비공식 학습 기회(강의·도서·세미나 등)를 적극 활용한다.',
+      '나는 배운 내용을 실제 업무나 생활에 적용하는 능력이 있다.'
+    ]
+  },
+  {
+    id:'f7', slot:'--s7', name:'재정관리',
+    desc:'재정 현황 파악, 저축·투자, 경력 전환 대비 경제적 준비 역량',
+    qs:[
+      '나는 현재의 재정 상태(수입·지출·자산)를 명확히 파악하고 있다.',
+      '나는 미래 경제적 목표를 위한 저축 또는 투자를 실행하고 있다.',
+      '나는 경력 전환이나 이직 공백기에 대비한 비상 자금이 준비되어 있다.',
+      '나는 소득과 지출의 균형을 합리적으로 관리한다.',
+      '나는 은퇴 후 생활을 위한 장기 재정 계획을 세우고 있다.'
+    ]
+  },
+  {
+    id:'f8', slot:'--s8', name:'건강관리',
+    desc:'일·생활 균형, 스트레스 관리, 신체·정신 건강 유지 역량',
+    qs:[
+      '나는 일과 생활의 균형(워라밸)을 유지하려고 꾸준히 노력한다.',
+      '나는 스트레스를 효과적으로 관리하는 나만의 방법을 갖고 있다.',
+      '나는 규칙적인 신체 활동과 건강한 식습관을 유지한다.',
+      '나는 정신 건강의 중요성을 인식하고 적절한 방법으로 관리한다.',
+      '나는 충분한 수면과 휴식을 취하기 위해 의식적으로 노력한다.'
+    ]
+  }
+];
+
+const INSIGHTS = {
+  f1:{ low:'단기(3개월) 실행 목표를 먼저 세우고, 주 단위로 진척을 점검하는 루틴을 만들어 보세요.', high:'진로 계획 수립과 전략적 관리가 우수합니다. 정기적인 검토 루틴을 유지하세요.' },
+  f2:{ low:'강점 검사(StrengthsFinder·Holland Code)를 활용해 자아 이해를 심화하고, 커리어 상담을 받아 보세요.', high:'자신을 깊이 이해하고 있어 진로 결정의 기반이 탄탄합니다.' },
+  f3:{ low:'관심 직종 종사자 인터뷰(커피챗)나 직업 박람회 참가로 현장 정보를 보완해 보세요.', high:'적극적인 정보 탐색으로 폭넓은 진로 시야를 갖추고 있습니다.' },
+  f4:{ low:'소규모 사이드 프로젝트나 새로운 역할 도전을 통해 적응 근육을 키워 보세요.', high:'변화 적응력과 문제 해결 능력이 뛰어나 다양한 환경에서 역량을 발휘할 수 있습니다.' },
+  f5:{ low:'LinkedIn 프로필을 업데이트하고, 업계 온라인 커뮤니티 1곳에 가입하는 것부터 시작해 보세요.', high:'넓고 다양한 인적 네트워크를 보유하고 있어 기회 탐색에 유리합니다.' },
+  f6:{ low:'주 1회 이상 30분 학습 블록을 캘린더에 예약해 지식 습관의 기반을 만들어 보세요.', high:'지속 학습 습관이 잘 형성되어 있어 변화하는 직업 시장에 잘 대응할 수 있습니다.' },
+  f7:{ low:'비상자금 3개월치 확보 목표를 세우고, 경력 전환 예상 비용을 구체적으로 계산해 보세요.', high:'재정 계획이 체계적으로 수립되어 있어 진로 변화에도 안정적으로 대응할 수 있습니다.' },
+  f8:{ low:'하루 30분 걷기·7시간 수면처럼 작고 지속 가능한 건강 습관 1가지를 먼저 정착시켜 보세요.', high:'건강한 신체·정신 기반으로 지속 가능한 경력 개발을 이어갈 수 있습니다.' }
+};
+
+/* ════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════ */
+const ST = {
+  age:'', employ:'', purpose:'',
+  target: 5.5,
+  domIdx: 0,
+  ans: [],      // [domIdx][qIdx] = 1-7 | null
+  chart: null
+};
+
+function resetAns() {
+  ST.ans = DOMAINS.map(d => d.qs.map(() => null));
+}
+resetAns();
+
+/* ════════════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════════════ */
+function go(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const isDark = root.getAttribute('data-theme') === 'dark';
+  root.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.querySelector('.theme-btn').textContent = isDark ? '☾' : '☀';
+  if (ST.chart) rebuildChart(DOMAINS.map((_,i) => avg(i)));
+}
+
+/* ════════════════════════════════════════════════
+   INFO FORM
+════════════════════════════════════════════════ */
+function pick(el, grp) {
+  document.querySelectorAll(`#g-${grp} .chip`).forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  ST[grp] = el.textContent.trim();
+  checkReady();
+}
+function checkReady() {
+  document.getElementById('btn-start').disabled = !(ST.age && ST.employ && ST.purpose);
+}
+function updateTarget(v) {
+  ST.target = parseFloat(v);
+  document.getElementById('targetVal').textContent = parseFloat(v).toFixed(1) + '점';
+}
+
+/* ════════════════════════════════════════════════
+   QUESTION FLOW
+════════════════════════════════════════════════ */
+function startQ() {
+  resetAns();
+  ST.domIdx = 0;
+  renderDom();
+  go('s-q');
+}
+
+function domColor(d) {
+  return getComputedStyle(document.documentElement).getPropertyValue(d.slot).trim();
+}
+
+function renderDom() {
+  const di = ST.domIdx;
+  const d = DOMAINS[di];
+  const total = DOMAINS.length;
+  const pct = Math.round((di / total) * 100);
+  const color = domColor(d);
+
+  document.getElementById('prog-label').textContent = `영역 ${di+1} / ${total}`;
+  document.getElementById('prog-pct').textContent = `${pct}%`;
+  document.getElementById('prog-fill').style.width = `${pct}%`;
+
+  document.getElementById('dom-header').innerHTML = `
+    <div class="dom-tag" style="background:${color}1a;border:1px solid ${color}44;color:${color};">
+      F${di+1} · ${d.name}
+    </div>
+    <div class="dom-name">${d.name} 역량</div>
+    <div class="dom-desc">${d.desc}</div>
+  `;
+
+  const list = document.getElementById('q-list');
+  list.innerHTML = '';
+  d.qs.forEach((txt, qi) => {
+    const saved = ST.ans[di][qi];
+    const card = document.createElement('div');
+    card.className = 'q-card' + (saved ? ' answered' : '');
+    card.id = `qc-${di}-${qi}`;
+    card.innerHTML = `
+      <div class="q-num">Q${qi+1} · ${d.name}</div>
+      <div class="q-text">${txt}</div>
+      <div class="scale-wrap">
+        <span class="scale-anchor">전혀<br>그렇지<br>않다</span>
+        <div class="scale-btns" id="sb-${di}-${qi}">
+          ${[1,2,3,4,5,6,7].map(v => `
+            <button class="sc-btn ${saved===v?'sel':''}"
+              style="${saved===v?`background:${color};border-color:${color};color:#fff;`:''}"
+              onclick="score(${di},${qi},${v},this)">${v}</button>
+          `).join('')}
+        </div>
+        <span class="scale-anchor">매우<br>그렇다</span>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  document.getElementById('btn-prev').style.display = di === 0 ? 'none' : 'inline-flex';
+  refreshNext();
+}
+
+function score(di, qi, v, btn) {
+  ST.ans[di][qi] = v;
+  const color = domColor(DOMAINS[di]);
+  document.querySelectorAll(`#sb-${di}-${qi} .sc-btn`).forEach(b => {
+    b.classList.remove('sel');
+    b.style.background = '';
+    b.style.borderColor = '';
+    b.style.color = '';
+  });
+  btn.classList.add('sel');
+  btn.style.background = color;
+  btn.style.borderColor = color;
+  btn.style.color = '#fff';
+  document.getElementById(`qc-${di}-${qi}`).classList.add('answered');
+  refreshNext();
+}
+
+function refreshNext() {
+  const di = ST.domIdx;
+  const done = ST.ans[di].every(a => a !== null);
+  const isLast = di === DOMAINS.length - 1;
+  const btn = document.getElementById('btn-next');
+  btn.disabled = !done;
+  btn.textContent = done ? (isLast ? '결과 보기 →' : '다음 영역 →') : '모든 문항에 응답해 주세요';
+}
+
+function nextDom() {
+  if (ST.domIdx < DOMAINS.length - 1) {
+    ST.domIdx++;
+    renderDom();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    buildResult();
+  }
+}
+function prevDom() {
+  if (ST.domIdx > 0) { ST.domIdx--; renderDom(); window.scrollTo({ top:0, behavior:'smooth' }); }
+}
+
+/* ════════════════════════════════════════════════
+   RESULT BUILD
+════════════════════════════════════════════════ */
+function avg(di) {
+  const a = ST.ans[di];
+  return a.reduce((s,v) => s+v, 0) / a.length;
+}
+
+function buildResult() {
+  document.getElementById('loading').classList.add('on');
+  setTimeout(() => {
+    _buildResult();
+    document.getElementById('loading').classList.remove('on');
+    go('s-result');
+  }, 800);
+}
+
+function _buildResult() {
+  const scores = DOMAINS.map((_,i) => avg(i));
+  const total  = scores.reduce((s,v) => s+v, 0) / scores.length;
+  const target = ST.target;
+
+  // subtitle
+  document.getElementById('result-sub').textContent =
+    [ST.age, ST.employ, ST.purpose].filter(Boolean).join(' · ');
+
+  // hero score
+  document.getElementById('hero-num').textContent = total.toFixed(2);
+  const tag = document.getElementById('hero-tag');
+  if (total >= 5.5) {
+    tag.textContent = '우수 — 강점을 더욱 발전시켜 보세요';
+    tag.style.cssText = `background:rgba(12,163,12,0.15);color:var(--good);border:1px solid rgba(12,163,12,0.3)`;
+  } else if (total >= 4) {
+    tag.textContent = '보통 — 균형 잡힌 개발이 필요합니다';
+    tag.style.cssText = `background:rgba(250,178,25,0.12);color:var(--warning);border:1px solid rgba(250,178,25,0.3)`;
+  } else {
+    tag.textContent = '개발 필요 — 집중 역량 강화를 권장합니다';
+    tag.style.cssText = `background:rgba(208,59,59,0.12);color:var(--critical);border:1px solid rgba(208,59,59,0.3)`;
+  }
+
+  // update legend target label
+  document.getElementById('legend-target').textContent = `목표 (${target.toFixed(1)}점)`;
+
+  // radar chart
+  rebuildChart(scores);
+
+  // domain cards
+  const grid = document.getElementById('dom-grid');
+  grid.innerHTML = '';
+  scores.forEach((sc, di) => {
+    const d = DOMAINS[di];
+    const color = domColor(d);
+    const gap = target - sc;
+
+    // GAP status (always icon+label per spec)
+    let gapIcon, gapColor, gapLabel;
+    if (gap <= 0)       { gapIcon='✅'; gapColor='var(--good)';     gapLabel=`목표 달성 (+${Math.abs(gap).toFixed(1)}점 초과)`; }
+    else if (gap < 0.5) { gapIcon='◎'; gapColor='var(--warning)';   gapLabel=`목표에 근접 (GAP −${gap.toFixed(1)}점)`; }
+    else if (gap < 1.5) { gapIcon='⚠'; gapColor='var(--serious)';   gapLabel=`보통 (GAP −${gap.toFixed(1)}점)`; }
+    else                { gapIcon='❗'; gapColor='var(--critical)';   gapLabel=`집중 개발 필요 (GAP −${gap.toFixed(1)}점)`; }
+
+    grid.innerHTML += `
+      <div class="dom-card">
+        <div class="dom-card-head">
+          <div class="dom-swatch" style="background:${color}"></div>
+          <div class="dom-card-name">${d.name}</div>
+          <div class="dom-card-score" style="color:${color}">${sc.toFixed(1)}</div>
+        </div>
+        <div class="bar-row">
+          <span class="bar-lbl">현재</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${(sc/7)*100}%;background:${color}"></div></div>
+          <span class="bar-val">${sc.toFixed(1)}</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-lbl">목표</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${(target/7)*100}%;background:var(--baseline)"></div></div>
+          <span class="bar-val">${target.toFixed(1)}</span>
+        </div>
+        <div class="gap-badge" style="color:${gapColor}">${gapIcon} <span>${gapLabel}</span></div>
+      </div>
+    `;
+  });
+
+  // Insights
+  const ins = document.getElementById('insight-section');
+  ins.innerHTML = '<h3 class="insight-title">맞춤형 역량 개발 제안</h3>';
+
+  const ranked = scores.map((s,i)=>({i,s})).sort((a,b)=>a.s-b.s);
+  const bottom3 = ranked.slice(0,3);
+  const top2    = ranked.slice(-2).reverse();
+
+  ins.innerHTML += `<p style="font-size:0.8rem;color:var(--ink-secondary);margin-bottom:16px;">
+    점수가 낮은 영역부터 순서대로 집중 개발을 제안합니다.</p>`;
+
+  bottom3.forEach(({i}) => {
+    const d = DOMAINS[i];
+    const color = domColor(d);
+    ins.innerHTML += `
+      <div class="insight-card" style="border-color:${color}">
+        <h4 style="color:${color}">⚡ ${d.name} — 집중 개발 권장</h4>
+        <p>${INSIGHTS[d.id].low}</p>
+      </div>`;
+  });
+
+  top2.forEach(({i}) => {
+    const d = DOMAINS[i];
+    ins.innerHTML += `
+      <div class="insight-card" style="border-color:var(--good)">
+        <h4 style="color:var(--good)">✅ ${d.name} — 강점 유지 및 레버리지</h4>
+        <p>${INSIGHTS[d.id].high}</p>
+      </div>`;
+  });
+}
+
+/* ════════════════════════════════════════════════
+   CHART — radar, 2 series → legend always shown
+   Mark spec: 2px line, ≥8px markers, surface ring
+════════════════════════════════════════════════ */
+function rebuildChart(scores) {
+  if (ST.chart) { ST.chart.destroy(); ST.chart = null; }
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    || (document.documentElement.getAttribute('data-theme') !== 'light'
+        && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  const s1     = isDark ? '#3987e5' : '#2a78d6';  // series 1: current score
+  const seqFil = isDark ? 'rgba(57,135,229,0.13)' : 'rgba(42,120,214,0.10)';
+  const muted  = '#898781';
+  const grid   = isDark ? '#2c2c2a' : '#e1e0d9';
+  const surf   = isDark ? '#1a1a19' : '#fcfcfb';
+
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  ST.chart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: DOMAINS.map(d => d.name),
+      datasets: [
+        {
+          label: '현재 점수',
+          data: scores,
+          backgroundColor: seqFil,        // area fill ~10% opacity (seq blue)
+          borderColor: s1,
+          borderWidth: 2,                  // 2px line per mark spec
+          pointBackgroundColor: s1,
+          pointBorderColor: surf,          // 2px surface ring on overlapping marks
+          pointBorderWidth: 2,
+          pointRadius: 5,                  // ≥8px diameter (r≥4)
+          pointHoverRadius: 7
+        },
+        {
+          label: `목표 (${ST.target.toFixed(1)}점)`,
+          data: DOMAINS.map(() => ST.target),
+          backgroundColor: 'transparent',
+          borderColor: muted,
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 0,                  // reference line — no marks
+          pointHoverRadius: 0
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: false },        // custom HTML legend below
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${
+              typeof ctx.raw === 'number' ? ctx.raw.toFixed(2) : ctx.raw
+            }점`
+          }
+        }
+      },
+      scales: {
+        r: {
+          min: 0, max: 7,
+          ticks: {
+            stepSize: 1,
+            color: muted,
+            font: { size: 10 },
+            backdropColor: 'transparent'
+          },
+          grid:        { color: grid },
+          angleLines:  { color: grid },
+          pointLabels: {
+            color: muted,
+            font: { size: 11, weight: '600', family: "'Noto Sans KR', system-ui" }
+          }
+        }
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════
+   UTIL
+════════════════════════════════════════════════ */
+function retake() {
+  resetAns();
+  ST.age=''; ST.employ=''; ST.purpose='';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+  document.getElementById('btn-start').disabled = true;
+  if (ST.chart) { ST.chart.destroy(); ST.chart = null; }
+  go('s-intro');
+}
+</script>
+</body>
+</html>
