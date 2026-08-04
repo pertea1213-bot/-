@@ -12,7 +12,7 @@ app.use(express.json());
 app.use('/api/admin', adminRouter);
 app.use('/api', appointmentsRouter);
 
-app.use(express.static(path.join(__dirname), { extensions: ['html'] }));
+app.use(express.static(path.join(__dirname), { extensions: ['html'], index: 'consulting-booking.html' }));
 
 app.use((err, req, res, next) => {
   console.error(err);
