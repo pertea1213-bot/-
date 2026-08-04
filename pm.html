@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM 관리 툴</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  .topnav { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .topnav .links { display: flex; gap: 16px; }
+  .topnav a { color: #4a5568; text-decoration: none; font-size: 0.9rem; }
+  .topnav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.6rem; margin-bottom: 24px; }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: #2d3748; }
+  label { display: block; font-size: 0.85rem; color: #4a5568; margin-bottom: 6px; font-weight: 600; }
+  input, textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus { outline: none; border-color: #4299e1; }
+  textarea { resize: vertical; min-height: 60px; }
+  .btn-primary {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #4299e1;
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary:hover { background: #3182ce; }
+  .btn-danger {
+    padding: 6px 12px;
+    border: 1px solid #fc8181;
+    border-radius: 8px;
+    background: #fff;
+    color: #e53e3e;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .btn-danger:hover { background: #fff5f5; }
+  #login-view { max-width: 360px; margin: 60px auto; }
+  .msg { margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; display: none; }
+  .msg.error { display: block; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+  .msg.success { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-tile {
+    background: #fff;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  .stat-tile .num { font-size: 1.8rem; font-weight: 700; color: #2d3748; }
+  .stat-tile .label { font-size: 0.82rem; color: #a0aec0; margin-top: 4px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .project-list { display: flex; flex-direction: column; gap: 14px; }
+  .project-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    text-decoration: none;
+    color: inherit;
+  }
+  .project-item:hover { border-color: #90cdf4; }
+  .project-main { flex: 1; min-width: 220px; }
+  .project-main .name { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+  .project-main .client { color: #718096; font-size: 0.85rem; margin-bottom: 8px; }
+  .badge { display: inline-block; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .badge.planning { background: #edf2f7; color: #4a5568; }
+  .badge.in_progress { background: #ebf8ff; color: #2b6cb0; }
+  .badge.on_hold { background: #fffaf0; color: #c05621; }
+  .badge.completed { background: #f0fff4; color: #276749; }
+  .badge.overdue { background: #fff5f5; color: #e53e3e; }
+  .progress-bar {
+    width: 200px;
+    height: 8px;
+    background: #edf2f7;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress-bar .fill { height: 100%; background: #4299e1; }
+  .task-counts { font-size: 0.78rem; color: #a0aec0; margin-top: 6px; }
+  .empty { color: #a0aec0; padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav">
+    <div class="links"><a href="consulting-admin.html">← 컨설팅 예약 관리</a></div>
+    <a href="#" id="logout-link" style="display:none;">로그아웃</a>
+  </div>
+
+  <div id="login-view">
+    <h1>PM 관리 툴 로그인</h1>
+    <div class="card">
+      <form id="login-form">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" required>
+        <button type="submit" class="btn-primary" style="width:100%; margin-top:16px;">로그인</button>
+        <div id="login-msg" class="msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard-view" style="display:none;">
+    <h1>PM 관리 툴</h1>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="card">
+      <h2>새 프로젝트 만들기</h2>
+      <form id="new-project-form">
+        <div class="form-grid">
+          <div>
+            <label for="p-name">프로젝트명</label>
+            <input type="text" id="p-name" required placeholder="예: A사 조직문화 컨설팅">
+          </div>
+          <div>
+            <label for="p-client">고객사</label>
+            <input type="text" id="p-client" placeholder="예: A사">
+          </div>
+          <div>
+            <label for="p-start">시작일</label>
+            <input type="date" id="p-start">
+          </div>
+          <div>
+            <label for="p-end">종료일</label>
+            <input type="date" id="p-end">
+          </div>
+        </div>
+        <label for="p-desc">설명</label>
+        <textarea id="p-desc" placeholder="프로젝트 개요를 간단히 적어주세요."></textarea>
+        <button type="submit" class="btn-primary" style="margin-top:14px;">프로젝트 생성</button>
+        <div id="project-msg" class="msg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>프로젝트 목록</h2>
+      <div class="project-list" id="project-list"></div>
+      <div id="project-empty" class="empty" style="display:none;">등록된 프로젝트가 없습니다.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN_KEY = 'consulting_admin_token';
+const statusLabel = { planning: '기획', in_progress: '진행중', on_hold: '보류', completed: '완료' };
+
+const loginView = document.getElementById('login-view');
+const dashboardView = document.getElementById('dashboard-view');
+const logoutLink = document.getElementById('logout-link');
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+function showMsg(el, text, type) { el.textContent = text; el.className = 'msg ' + type; }
+function clearMsg(el) { el.textContent = ''; el.className = 'msg'; }
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    clearToken();
+    renderAuthState();
+    throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+  }
+  return res;
+}
+
+function renderAuthState() {
+  if (getToken()) {
+    loginView.style.display = 'none';
+    dashboardView.style.display = 'block';
+    logoutLink.style.display = 'inline';
+    loadProjects();
+  } else {
+    loginView.style.display = 'block';
+    dashboardView.style.display = 'none';
+    logoutLink.style.display = 'none';
+  }
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const loginMsg = document.getElementById('login-msg');
+  clearMsg(loginMsg);
+  const password = document.getElementById('password').value;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsg(loginMsg, data.error || '로그인에 실패했습니다.', 'error'); return; }
+    setToken(data.token);
+    renderAuthState();
+  } catch (err) {
+    showMsg(loginMsg, '네트워크 오류가 발생했습니다.', 'error');
+  }
+});
+
+logoutLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  clearToken();
+  renderAuthState();
+});
+
+const statsGrid = document.getElementById('stats-grid');
+const projectList = document.getElementById('project-list');
+const projectEmpty = document.getElementById('project-empty');
+
+function renderStats(projects) {
+  const totalProjects = projects.length;
+  const inProgress = projects.filter((p) => p.status === 'in_progress').length;
+  const totalTasks = projects.reduce((sum, p) => sum + p.taskCounts.total, 0);
+  const overdueTasks = projects.reduce((sum, p) => sum + p.overdueTasks, 0);
+
+  const tiles = [
+    ['전체 프로젝트', totalProjects],
+    ['진행중 프로젝트', inProgress],
+    ['전체 작업', totalTasks],
+    ['지연된 작업', overdueTasks],
+  ];
+  statsGrid.innerHTML = tiles.map(([label, num]) => `
+    <div class="stat-tile"><div class="num">${num}</div><div class="label">${label}</div></div>
+  `).join('');
+}
+
+function renderProjects(projects) {
+  if (!projects.length) {
+    projectList.innerHTML = '';
+    projectEmpty.style.display = 'block';
+    return;
+  }
+  projectEmpty.style.display = 'none';
+  projectList.innerHTML = projects.map((p) => `
+    <a class="project-item" href="pm-project.html?id=${p.id}">
+      <div class="project-main">
+        <div class="name">${escapeHtml(p.name)} <span class="badge ${p.status}">${statusLabel[p.status] || p.status}</span>${p.overdueTasks > 0 ? `<span class="badge overdue">지연 ${p.overdueTasks}</span>` : ''}</div>
+        <div class="client">${escapeHtml(p.client || '고객사 미지정')}</div>
+        <div class="progress-bar"><div class="fill" style="width:${p.progress}%"></div></div>
+        <div class="task-counts">진행률 ${p.progress}% · 할일 ${p.taskCounts.todo} · 진행중 ${p.taskCounts.in_progress} · 완료 ${p.taskCounts.done}</div>
+      </div>
+      <button type="button" class="btn-danger" data-delete="${p.id}">삭제</button>
+    </a>
+  `).join('');
+}
+
+async function loadProjects() {
+  try {
+    const res = await apiFetch('/api/pm/projects');
+    const data = await res.json();
+    renderStats(data.projects);
+    renderProjects(data.projects);
+  } catch (err) { /* handled in apiFetch */ }
+}
+
+projectList.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-delete]');
+  if (!btn) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (!confirm('이 프로젝트와 모든 작업/마일스톤을 삭제하시겠습니까?')) return;
+  try {
+    await apiFetch(`/api/pm/projects/${btn.dataset.delete}`, { method: 'DELETE' });
+    loadProjects();
+  } catch (err) {
+    alert(err.message || '삭제 중 오류가 발생했습니다.');
+  }
+});
+
+document.getElementById('new-project-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const projectMsg = document.getElementById('project-msg');
+  clearMsg(projectMsg);
+
+  const payload = {
+    name: document.getElementById('p-name').value.trim(),
+    client: document.getElementById('p-client').value.trim(),
+    description: document.getElementById('p-desc').value.trim(),
+    startDate: document.getElementById('p-start').value,
+    endDate: document.getElementById('p-end').value,
+  };
+
+  try {
+    const res = await apiFetch('/api/pm/projects', { method: 'POST', body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) { showMsg(projectMsg, data.error || '생성에 실패했습니다.', 'error'); return; }
+    showMsg(projectMsg, `"${data.name}" 프로젝트가 생성되었습니다.`, 'success');
+    document.getElementById('new-project-form').reset();
+    loadProjects();
+  } catch (err) {
+    showMsg(projectMsg, err.message || '오류가 발생했습니다.', 'error');
+  }
+});
+
+renderAuthState();
+</script>
+</body>
+</html>

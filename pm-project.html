@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프로젝트 상세 - PM 관리 툴</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .topnav { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .topnav a { color: #4a5568; text-decoration: none; font-size: 0.9rem; }
+  .topnav a:hover { text-decoration: underline; }
+  #login-view { max-width: 360px; margin: 60px auto; }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+  }
+  .card h2 { font-size: 1.05rem; margin-bottom: 14px; color: #2d3748; }
+  label { display: block; font-size: 0.82rem; color: #4a5568; margin-bottom: 6px; font-weight: 600; }
+  input:not([type="checkbox"]), select, textarea {
+    width: 100%;
+    padding: 8px 11px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #4299e1; }
+  textarea { resize: vertical; min-height: 50px; }
+  .btn-primary {
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #4299e1;
+    color: #fff;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary:hover { background: #3182ce; }
+  .btn-secondary {
+    padding: 6px 11px;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    background: #fff;
+    color: #4a5568;
+    font-size: 0.78rem;
+    cursor: pointer;
+  }
+  .btn-secondary:hover { border-color: #a0aec0; }
+  .btn-danger {
+    padding: 4px 9px;
+    border: 1px solid #fc8181;
+    border-radius: 6px;
+    background: #fff;
+    color: #e53e3e;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+  .btn-danger:hover { background: #fff5f5; }
+  .msg { margin-top: 12px; padding: 9px 13px; border-radius: 8px; font-size: 0.85rem; display: none; }
+  .msg.error { display: block; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+  .msg.success { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .project-header-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin: 14px 0; }
+  .badge { display: inline-block; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; margin-left: 6px; }
+  .badge.planning { background: #edf2f7; color: #4a5568; }
+  .badge.in_progress { background: #ebf8ff; color: #2b6cb0; }
+  .badge.on_hold { background: #fffaf0; color: #c05621; }
+  .badge.completed { background: #f0fff4; color: #276749; }
+  .progress-bar { width: 100%; max-width: 320px; height: 8px; background: #edf2f7; border-radius: 999px; overflow: hidden; margin-top: 10px; }
+  .progress-bar .fill { height: 100%; background: #4299e1; }
+  .milestone-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .milestone-item { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; padding: 8px 0; border-bottom: 1px solid #edf2f7; }
+  .milestone-item input[type="checkbox"] { flex: 0 0 auto; }
+  .milestone-item.completed .m-title { text-decoration: line-through; color: #a0aec0; }
+  .milestone-item .m-title { flex: 1; }
+  .milestone-item .m-date { color: #a0aec0; font-size: 0.8rem; }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .add-row > div { flex: 1; min-width: 120px; }
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .col { background: #f7fafc; border-radius: 12px; padding: 14px; min-height: 120px; }
+  .col h3 { font-size: 0.9rem; color: #4a5568; margin-bottom: 12px; display: flex; justify-content: space-between; }
+  .task-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .task-card .title { font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; }
+  .task-card .meta { font-size: 0.76rem; color: #a0aec0; margin-bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .prio { display: inline-block; font-size: 0.68rem; padding: 1px 7px; border-radius: 999px; }
+  .prio.low { background: #edf2f7; color: #4a5568; }
+  .prio.medium { background: #ebf8ff; color: #2b6cb0; }
+  .prio.high { background: #fff5f5; color: #e53e3e; }
+  .overdue-tag { color: #e53e3e; font-weight: 600; }
+  .task-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .empty { color: #a0aec0; padding: 10px; text-align: center; font-size: 0.85rem; }
+  @media (max-width: 760px) { .board { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav">
+    <a href="pm.html">&larr; 프로젝트 목록</a>
+    <a href="#" id="logout-link" style="display:none;">로그아웃</a>
+  </div>
+
+  <div id="login-view">
+    <h1>PM 관리 툴 로그인</h1>
+    <div class="card">
+      <form id="login-form">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" required>
+        <button type="submit" class="btn-primary" style="width:100%; margin-top:16px;">로그인</button>
+        <div id="login-msg" class="msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="detail-view" style="display:none;">
+    <div class="card">
+      <h1 id="p-title">-</h1>
+      <div id="p-client-line" style="color:#718096; font-size:0.9rem;"></div>
+      <div class="progress-bar"><div class="fill" id="p-progress-fill" style="width:0%"></div></div>
+
+      <form id="edit-project-form">
+        <div class="project-header-grid">
+          <div>
+            <label for="e-name">프로젝트명</label>
+            <input type="text" id="e-name" required>
+          </div>
+          <div>
+            <label for="e-client">고객사</label>
+            <input type="text" id="e-client">
+          </div>
+          <div>
+            <label for="e-status">상태</label>
+            <select id="e-status">
+              <option value="planning">기획</option>
+              <option value="in_progress">진행중</option>
+              <option value="on_hold">보류</option>
+              <option value="completed">완료</option>
+            </select>
+          </div>
+          <div>
+            <label for="e-start">시작일</label>
+            <input type="date" id="e-start">
+          </div>
+          <div>
+            <label for="e-end">종료일</label>
+            <input type="date" id="e-end">
+          </div>
+        </div>
+        <label for="e-desc">설명</label>
+        <textarea id="e-desc"></textarea>
+        <button type="submit" class="btn-primary" style="margin-top:12px;">프로젝트 정보 저장</button>
+        <div id="project-msg" class="msg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>마일스톤</h2>
+      <div class="milestone-list" id="milestone-list"></div>
+      <div id="milestone-empty" class="empty" style="display:none;">등록된 마일스톤이 없습니다.</div>
+      <form id="add-milestone-form" class="add-row">
+        <div><input type="text" id="m-title" placeholder="마일스톤 제목" required></div>
+        <div><input type="date" id="m-date"></div>
+        <div style="flex:0;"><button type="submit" class="btn-secondary">추가</button></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>작업 보드</h2>
+      <form id="add-task-form" class="add-row" style="margin-bottom:18px;">
+        <div><input type="text" id="t-title" placeholder="작업 제목" required></div>
+        <div><input type="text" id="t-assignee" placeholder="담당자"></div>
+        <div>
+          <select id="t-priority">
+            <option value="low">낮음</option>
+            <option value="medium" selected>보통</option>
+            <option value="high">높음</option>
+          </select>
+        </div>
+        <div><input type="date" id="t-due"></div>
+        <div style="flex:0;"><button type="submit" class="btn-secondary">작업 추가</button></div>
+      </form>
+      <div id="task-msg" class="msg"></div>
+
+      <div class="board">
+        <div class="col" data-status="todo"><h3>할 일 <span id="count-todo">0</span></h3><div class="cards" id="cards-todo"></div></div>
+        <div class="col" data-status="in_progress"><h3>진행중 <span id="count-in_progress">0</span></h3><div class="cards" id="cards-in_progress"></div></div>
+        <div class="col" data-status="done"><h3>완료 <span id="count-done">0</span></h3><div class="cards" id="cards-done"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN_KEY = 'consulting_admin_token';
+const params = new URLSearchParams(location.search);
+const projectId = params.get('id');
+const statusLabel = { planning: '기획', in_progress: '진행중', on_hold: '보류', completed: '완료' };
+const priorityLabel = { low: '낮음', medium: '보통', high: '높음' };
+const STATUS_ORDER = ['todo', 'in_progress', 'done'];
+
+const loginView = document.getElementById('login-view');
+const detailView = document.getElementById('detail-view');
+const logoutLink = document.getElementById('logout-link');
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+function showMsg(el, text, type) { el.textContent = text; el.className = 'msg ' + type; }
+function clearMsg(el) { el.textContent = ''; el.className = 'msg'; }
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}`, ...(options.headers || {}) },
+  });
+  if (res.status === 401) {
+    clearToken();
+    renderAuthState();
+    throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+  }
+  return res;
+}
+
+function renderAuthState() {
+  if (!projectId) {
+    document.body.innerHTML = '<p style="padding:40px;text-align:center;color:#a0aec0;">프로젝트 ID가 없습니다. <a href="pm.html">목록으로</a></p>';
+    return;
+  }
+  if (getToken()) {
+    loginView.style.display = 'none';
+    detailView.style.display = 'block';
+    logoutLink.style.display = 'inline';
+    loadProject();
+  } else {
+    loginView.style.display = 'block';
+    detailView.style.display = 'none';
+    logoutLink.style.display = 'none';
+  }
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const loginMsg = document.getElementById('login-msg');
+  clearMsg(loginMsg);
+  const password = document.getElementById('password').value;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsg(loginMsg, data.error || '로그인에 실패했습니다.', 'error'); return; }
+    setToken(data.token);
+    renderAuthState();
+  } catch (err) { showMsg(loginMsg, '네트워크 오류가 발생했습니다.', 'error'); }
+});
+
+logoutLink.addEventListener('click', (e) => { e.preventDefault(); clearToken(); renderAuthState(); });
+
+let currentProject = null;
+
+async function loadProject() {
+  try {
+    const res = await apiFetch(`/api/pm/projects/${projectId}`);
+    const data = await res.json();
+    if (!res.ok) {
+      document.body.innerHTML = `<p style="padding:40px;text-align:center;color:#e53e3e;">${escapeHtml(data.error || '불러오기 실패')}</p>`;
+      return;
+    }
+    currentProject = data;
+    renderProject(data);
+  } catch (err) { /* handled */ }
+}
+
+function renderProject(p) {
+  document.getElementById('p-title').innerHTML = `${escapeHtml(p.name)} <span class="badge ${p.status}">${statusLabel[p.status]}</span>`;
+  document.getElementById('p-client-line').textContent = p.client || '고객사 미지정';
+  document.getElementById('p-progress-fill').style.width = p.progress + '%';
+
+  document.getElementById('e-name').value = p.name;
+  document.getElementById('e-client').value = p.client || '';
+  document.getElementById('e-status').value = p.status;
+  document.getElementById('e-start').value = p.startDate || '';
+  document.getElementById('e-end').value = p.endDate || '';
+  document.getElementById('e-desc').value = p.description || '';
+
+  renderMilestones(p.milestones);
+  renderBoard(p.tasks);
+}
+
+document.getElementById('edit-project-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const projectMsg = document.getElementById('project-msg');
+  clearMsg(projectMsg);
+  const payload = {
+    name: document.getElementById('e-name').value.trim(),
+    client: document.getElementById('e-client').value.trim(),
+    status: document.getElementById('e-status').value,
+    startDate: document.getElementById('e-start').value,
+    endDate: document.getElementById('e-end').value,
+    description: document.getElementById('e-desc').value.trim(),
+  };
+  try {
+    const res = await apiFetch(`/api/pm/projects/${projectId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) { showMsg(projectMsg, data.error || '저장 실패', 'error'); return; }
+    showMsg(projectMsg, '저장되었습니다.', 'success');
+    loadProject();
+  } catch (err) { showMsg(projectMsg, err.message || '오류가 발생했습니다.', 'error'); }
+});
+
+const milestoneList = document.getElementById('milestone-list');
+const milestoneEmpty = document.getElementById('milestone-empty');
+
+function renderMilestones(milestones) {
+  if (!milestones.length) {
+    milestoneList.innerHTML = '';
+    milestoneEmpty.style.display = 'block';
+    return;
+  }
+  milestoneEmpty.style.display = 'none';
+  milestoneList.innerHTML = milestones.map((m) => `
+    <div class="milestone-item ${m.completed ? 'completed' : ''}" data-id="${m.id}">
+      <input type="checkbox" data-toggle="${m.id}" ${m.completed ? 'checked' : ''}>
+      <span class="m-title">${escapeHtml(m.title)}</span>
+      <span class="m-date">${m.dueDate || ''}</span>
+      <button type="button" class="btn-danger" data-delete-milestone="${m.id}">삭제</button>
+    </div>
+  `).join('');
+}
+
+milestoneList.addEventListener('click', async (e) => {
+  const del = e.target.closest('[data-delete-milestone]');
+  if (del) {
+    if (!confirm('마일스톤을 삭제하시겠습니까?')) return;
+    await apiFetch(`/api/pm/milestones/${del.dataset.deleteMilestone}`, { method: 'DELETE' });
+    loadProject();
+  }
+});
+
+milestoneList.addEventListener('change', async (e) => {
+  const cb = e.target.closest('[data-toggle]');
+  if (!cb) return;
+  await apiFetch(`/api/pm/milestones/${cb.dataset.toggle}`, {
+    method: 'PATCH', body: JSON.stringify({ completed: cb.checked }),
+  });
+  loadProject();
+});
+
+document.getElementById('add-milestone-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const title = document.getElementById('m-title').value.trim();
+  const dueDate = document.getElementById('m-date').value;
+  if (!title) return;
+  await apiFetch(`/api/pm/projects/${projectId}/milestones`, {
+    method: 'POST', body: JSON.stringify({ title, dueDate }),
+  });
+  document.getElementById('add-milestone-form').reset();
+  loadProject();
+});
+
+function renderBoard(tasks) {
+  STATUS_ORDER.forEach((s) => {
+    const list = tasks.filter((t) => t.status === s);
+    document.getElementById(`count-${s}`).textContent = list.length;
+    document.getElementById(`cards-${s}`).innerHTML = list.map((t) => taskCardHtml(t)).join('') || '<div class="empty">없음</div>';
+  });
+}
+
+function taskCardHtml(t) {
+  const idx = STATUS_ORDER.indexOf(t.status);
+  const prevStatus = idx > 0 ? STATUS_ORDER[idx - 1] : null;
+  const nextStatus = idx < STATUS_ORDER.length - 1 ? STATUS_ORDER[idx + 1] : null;
+  return `
+    <div class="task-card" data-id="${t.id}">
+      <div class="title">${escapeHtml(t.title)}</div>
+      <div class="meta">
+        <span class="prio ${t.priority}">${priorityLabel[t.priority]}</span>
+        ${t.assignee ? `<span>${escapeHtml(t.assignee)}</span>` : ''}
+        ${t.dueDate ? `<span class="${t.overdue ? 'overdue-tag' : ''}">${t.dueDate}${t.overdue ? ' 지연' : ''}</span>` : ''}
+      </div>
+      <div class="task-actions">
+        ${prevStatus ? `<button type="button" class="btn-secondary" data-move="${t.id}" data-to="${prevStatus}">&larr;</button>` : ''}
+        ${nextStatus ? `<button type="button" class="btn-secondary" data-move="${t.id}" data-to="${nextStatus}">&rarr;</button>` : ''}
+        <button type="button" class="btn-danger" data-delete-task="${t.id}">삭제</button>
+      </div>
+    </div>
+  `;
+}
+
+document.querySelector('.board').addEventListener('click', async (e) => {
+  const move = e.target.closest('[data-move]');
+  const del = e.target.closest('[data-delete-task]');
+  if (move) {
+    await apiFetch(`/api/pm/tasks/${move.dataset.move}`, {
+      method: 'PATCH', body: JSON.stringify({ status: move.dataset.to }),
+    });
+    loadProject();
+  } else if (del) {
+    if (!confirm('작업을 삭제하시겠습니까?')) return;
+    await apiFetch(`/api/pm/tasks/${del.dataset.deleteTask}`, { method: 'DELETE' });
+    loadProject();
+  }
+});
+
+document.getElementById('add-task-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const taskMsg = document.getElementById('task-msg');
+  clearMsg(taskMsg);
+  const payload = {
+    title: document.getElementById('t-title').value.trim(),
+    assignee: document.getElementById('t-assignee').value.trim(),
+    priority: document.getElementById('t-priority').value,
+    dueDate: document.getElementById('t-due').value,
+  };
+  try {
+    const res = await apiFetch(`/api/pm/projects/${projectId}/tasks`, { method: 'POST', body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) { showMsg(taskMsg, data.error || '추가 실패', 'error'); return; }
+    document.getElementById('add-task-form').reset();
+    document.getElementById('t-priority').value = 'medium';
+    loadProject();
+  } catch (err) { showMsg(taskMsg, err.message || '오류가 발생했습니다.', 'error'); }
+});
+
+renderAuthState();
+</script>
+</body>
+</html>

@@ -3,6 +3,7 @@ const express = require('express');
 
 const { router: appointmentsRouter } = require('./routes/appointments');
 const adminRouter = require('./routes/admin');
+const pmRouter = require('./routes/pm');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -10,6 +11,7 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json());
 
 app.use('/api/admin', adminRouter);
+app.use('/api/pm', pmRouter);
 app.use('/api', appointmentsRouter);
 
 app.use(express.static(path.join(__dirname), { extensions: ['html'], index: 'consulting-booking.html' }));
