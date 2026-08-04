@@ -1,0 +1,13 @@
+{
+  "name": "컨설팅 일정관리",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "postCreateCommand": "npm install",
+  "postStartCommand": "sh -c 'nohup npm start > /tmp/server.log 2>&1 &'",
+  "forwardPorts": [5000],
+  "portsAttributes": {
+    "5000": {
+      "label": "컨설팅 일정관리",
+      "onAutoForward": "openPreview"
+    }
+  }
+}

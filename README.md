@@ -1,8 +1,10 @@
-# 진단 도구 모음 + 컨설팅 일정관리
+# 컨설팅 일정관리
 
-정적 진단 도구 페이지와, Node.js/Express + SQLite 기반의 컨설팅 예약·일정관리 풀스택 기능을 함께 제공합니다.
+Node.js/Express + SQLite 기반의 컨설팅 예약·일정관리 풀스택 애플리케이션입니다. 기존에 있던 진단 도구 페이지들은 `diagnostics.html`에 그대로 남아있지만 사이트 첫 화면(`/`)에는 노출되지 않습니다.
 
 ## 실행 방법
+
+### 로컬
 
 ```bash
 npm install
@@ -10,6 +12,10 @@ npm start        # http://localhost:5000
 ```
 
 `server.js`가 정적 파일(HTML)과 `/api` REST API를 함께 서비스합니다.
+
+### GitHub Codespaces
+
+이 저장소에는 `.devcontainer/devcontainer.json`이 포함되어 있어, GitHub의 **Code → Codespaces → Create codespace**로 열면 `npm install`과 `npm start`가 자동으로 실행되고 5000번 포트가 자동으로 미리보기로 열립니다. 별도 설정 없이 바로 확인할 수 있습니다.
 
 ## 컨설팅 일정관리 기능
 
