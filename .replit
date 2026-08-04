@@ -1,4 +1,4 @@
-modules = ["web", "python-3.11"]
+modules = ["web", "nodejs-22", "python-3.11"]
 [agent]
 expertMode = true
 stack = "BEST_EFFORT_FALLBACK"
@@ -24,7 +24,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python3 -m http.server 5000 --bind 0.0.0.0"
+args = "npm install && node server.js"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
@@ -35,5 +35,6 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-deploymentTarget = "static"
-publicDir = "."
+deploymentTarget = "cloudrun"
+build = ["npm", "install"]
+run = ["node", "server.js"]

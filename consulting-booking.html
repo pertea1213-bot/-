@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>컨설팅 일정 예약</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  .topnav { margin-bottom: 20px; }
+  .topnav a { color: #4a5568; text-decoration: none; font-size: 0.9rem; }
+  .topnav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.6rem; margin-bottom: 6px; }
+  .subtitle { color: #718096; margin-bottom: 28px; font-size: 0.95rem; }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+  }
+  .card h2 { font-size: 1.15rem; margin-bottom: 18px; color: #2d3748; }
+  label { display: block; font-size: 0.85rem; color: #4a5568; margin-bottom: 6px; margin-top: 16px; font-weight: 600; }
+  label:first-of-type { margin-top: 0; }
+  input[type="text"], input[type="tel"], input[type="email"], input[type="date"], select, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #fff;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #4299e1; }
+  textarea { resize: vertical; min-height: 70px; }
+  .slots { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .slot-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e0;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.88rem;
+    color: #2d3748;
+  }
+  .slot-btn:hover:not(:disabled) { border-color: #4299e1; }
+  .slot-btn.selected { background: #4299e1; color: #fff; border-color: #4299e1; }
+  .slot-btn:disabled { background: #edf2f7; color: #cbd5e0; cursor: not-allowed; text-decoration: line-through; }
+  .hint { color: #a0aec0; font-size: 0.85rem; margin-top: 8px; }
+  .btn-primary {
+    margin-top: 22px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #4299e1;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary:hover:not(:disabled) { background: #3182ce; }
+  .btn-primary:disabled { background: #cbd5e0; cursor: not-allowed; }
+  .btn-secondary {
+    padding: 8px 14px;
+    border: 1px solid #4299e1;
+    border-radius: 8px;
+    background: #fff;
+    color: #4299e1;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .msg { margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 0.9rem; display: none; }
+  .msg.success { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+  .msg.error { display: block; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+  .lookup-row { display: flex; gap: 8px; }
+  .lookup-row input { flex: 1; }
+  .lookup-row button { white-space: nowrap; }
+  .appt-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .appt-item .info { font-size: 0.9rem; line-height: 1.5; }
+  .appt-item .badge {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 6px;
+  }
+  .badge.pending { background: #fffaf0; color: #c05621; }
+  .badge.confirmed { background: #ebf8ff; color: #2b6cb0; }
+  .badge.completed { background: #f0fff4; color: #276749; }
+  .badge.cancelled { background: #f7fafc; color: #a0aec0; }
+  .btn-danger {
+    padding: 6px 12px;
+    border: 1px solid #fc8181;
+    border-radius: 8px;
+    background: #fff;
+    color: #e53e3e;
+    font-size: 0.82rem;
+    cursor: pointer;
+  }
+  .btn-danger:hover { background: #fff5f5; }
+  .admin-link { text-align: center; margin-top: 8px; }
+  .admin-link a { color: #a0aec0; font-size: 0.82rem; text-decoration: none; }
+  .admin-link a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav"><a href="index.html">&larr; 도구 모음으로</a></div>
+  <h1>컨설팅 일정 예약</h1>
+  <p class="subtitle">원하시는 날짜와 시간을 선택하여 컨설팅을 예약하세요.</p>
+
+  <div class="card">
+    <h2>예약하기</h2>
+    <form id="booking-form">
+      <label for="date">날짜</label>
+      <input type="date" id="date" required>
+
+      <label>시간</label>
+      <div id="slots" class="slots"></div>
+      <p id="slot-hint" class="hint">날짜를 먼저 선택해주세요.</p>
+
+      <label for="consultingType">상담 유형</label>
+      <select id="consultingType" required></select>
+
+      <label for="name">이름</label>
+      <input type="text" id="name" required placeholder="홍길동">
+
+      <label for="phone">연락처</label>
+      <input type="tel" id="phone" required placeholder="010-1234-5678">
+
+      <label for="email">이메일 (선택)</label>
+      <input type="email" id="email" placeholder="example@email.com">
+
+      <label for="memo">상담 내용 (선택)</label>
+      <textarea id="memo" placeholder="상담받고 싶은 내용을 간단히 적어주세요."></textarea>
+
+      <button type="submit" class="btn-primary" id="submit-btn" disabled>예약 신청</button>
+      <div id="booking-msg" class="msg"></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>내 예약 조회 / 취소</h2>
+    <div class="lookup-row">
+      <input type="tel" id="lookup-phone" placeholder="예약 시 입력한 연락처">
+      <button class="btn-secondary" id="lookup-btn">조회</button>
+    </div>
+    <div id="lookup-msg" class="msg"></div>
+    <div id="lookup-results"></div>
+  </div>
+
+  <div class="admin-link"><a href="consulting-admin.html">관리자 로그인</a></div>
+</div>
+
+<script>
+const dateInput = document.getElementById('date');
+const slotsEl = document.getElementById('slots');
+const slotHint = document.getElementById('slot-hint');
+const consultingTypeEl = document.getElementById('consultingType');
+const submitBtn = document.getElementById('submit-btn');
+const bookingMsg = document.getElementById('booking-msg');
+const form = document.getElementById('booking-form');
+
+let selectedTime = null;
+
+const todayIso = new Date().toISOString().slice(0, 10);
+dateInput.min = todayIso;
+dateInput.value = todayIso;
+
+function showMsg(el, text, type) {
+  el.textContent = text;
+  el.className = 'msg ' + type;
+}
+
+function clearMsg(el) {
+  el.textContent = '';
+  el.className = 'msg';
+}
+
+async function loadConsultingTypes() {
+  try {
+    const res = await fetch('/api/consulting-types');
+    const data = await res.json();
+    consultingTypeEl.innerHTML = data.types.map((t) => `<option value="${t}">${t}</option>`).join('');
+  } catch (e) {
+    consultingTypeEl.innerHTML = '<option value="일반 상담">일반 상담</option>';
+  }
+}
+
+async function loadSlots() {
+  selectedTime = null;
+  submitBtn.disabled = true;
+  slotsEl.innerHTML = '';
+  slotHint.textContent = '불러오는 중...';
+  const date = dateInput.value;
+  if (!date) return;
+
+  try {
+    const res = await fetch(`/api/availability?date=${encodeURIComponent(date)}`);
+    const data = await res.json();
+    if (data.closed) {
+      slotHint.textContent = data.reason === 'past_date'
+        ? '지난 날짜는 선택할 수 없습니다.'
+        : '해당 날짜는 휴무일입니다. 다른 날짜를 선택해주세요.';
+      return;
+    }
+    if (!data.slots.length) {
+      slotHint.textContent = '예약 가능한 시간이 없습니다.';
+      return;
+    }
+    slotHint.textContent = '';
+    slotsEl.innerHTML = data.slots.map((s) => `
+      <button type="button" class="slot-btn" data-time="${s.time}" ${s.available ? '' : 'disabled'}>${s.time}</button>
+    `).join('');
+  } catch (e) {
+    slotHint.textContent = '시간 정보를 불러오지 못했습니다.';
+  }
+}
+
+slotsEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.slot-btn');
+  if (!btn || btn.disabled) return;
+  slotsEl.querySelectorAll('.slot-btn').forEach((b) => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedTime = btn.dataset.time;
+  submitBtn.disabled = false;
+});
+
+dateInput.addEventListener('change', loadSlots);
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMsg(bookingMsg);
+  if (!selectedTime) return;
+
+  const payload = {
+    name: document.getElementById('name').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    consultingType: consultingTypeEl.value,
+    date: dateInput.value,
+    time: selectedTime,
+    memo: document.getElementById('memo').value.trim(),
+  };
+
+  submitBtn.disabled = true;
+  try {
+    const res = await fetch('/api/appointments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(bookingMsg, data.error || '예약에 실패했습니다.', 'error');
+      submitBtn.disabled = false;
+      if (res.status === 409) loadSlots();
+      return;
+    }
+    showMsg(bookingMsg, `예약이 접수되었습니다. (${data.date} ${data.time}, 확인 대기중)`, 'success');
+    form.reset();
+    dateInput.value = todayIso;
+    loadConsultingTypes();
+    loadSlots();
+  } catch (e) {
+    showMsg(bookingMsg, '네트워크 오류가 발생했습니다.', 'error');
+    submitBtn.disabled = false;
+  }
+});
+
+const statusLabel = { pending: '대기중', confirmed: '확정', completed: '완료', cancelled: '취소됨' };
+
+const lookupBtn = document.getElementById('lookup-btn');
+const lookupPhone = document.getElementById('lookup-phone');
+const lookupMsg = document.getElementById('lookup-msg');
+const lookupResults = document.getElementById('lookup-results');
+
+async function doLookup() {
+  clearMsg(lookupMsg);
+  lookupResults.innerHTML = '';
+  const phone = lookupPhone.value.trim();
+  if (!phone) return;
+
+  try {
+    const res = await fetch(`/api/appointments/lookup?phone=${encodeURIComponent(phone)}`);
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(lookupMsg, data.error || '조회에 실패했습니다.', 'error');
+      return;
+    }
+    if (!data.appointments.length) {
+      showMsg(lookupMsg, '예정된 예약이 없습니다.', 'error');
+      return;
+    }
+    lookupResults.innerHTML = data.appointments.map((a) => `
+      <div class="appt-item" data-id="${a.id}">
+        <div class="info">
+          <strong>${a.date} ${a.time}</strong> · ${a.consultingType}
+          <span class="badge ${a.status}">${statusLabel[a.status] || a.status}</span><br>
+          ${a.name}${a.memo ? ' · ' + a.memo : ''}
+        </div>
+        ${a.status !== 'cancelled' ? `<button class="btn-danger" data-cancel="${a.id}">예약 취소</button>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    showMsg(lookupMsg, '네트워크 오류가 발생했습니다.', 'error');
+  }
+}
+
+lookupBtn.addEventListener('click', doLookup);
+lookupPhone.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doLookup(); } });
+
+lookupResults.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-cancel]');
+  if (!btn) return;
+  if (!confirm('예약을 취소하시겠습니까?')) return;
+  const id = btn.dataset.cancel;
+  try {
+    const res = await fetch(`/api/appointments/${id}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: lookupPhone.value.trim() }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || '취소에 실패했습니다.');
+      return;
+    }
+    doLookup();
+    loadSlots();
+  } catch (e) {
+    alert('네트워크 오류가 발생했습니다.');
+  }
+});
+
+loadConsultingTypes();
+loadSlots();
+</script>
+</body>
+</html>

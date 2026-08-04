@@ -1,0 +1,15 @@
+{
+  "name": "consulting-schedule",
+  "version": "1.0.0",
+  "private": true,
+  "description": "컨설팅 일정관리(예약/관리자) 풀스택 애플리케이션",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "express": "^4.19.2"
+  }
+}
