@@ -1,8 +1,8 @@
 {
-  "name": "consulting-schedule",
+  "name": "consulting-pm-tool",
   "version": "1.0.0",
   "private": true,
-  "description": "컨설팅 일정관리(예약/관리자) 풀스택 애플리케이션",
+  "description": "컨설팅 프로젝트 PM 관리 풀스택 애플리케이션",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
