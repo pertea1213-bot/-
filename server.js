@@ -1,8 +1,7 @@
 const path = require('path');
 const express = require('express');
 
-const { router: appointmentsRouter } = require('./routes/appointments');
-const adminRouter = require('./routes/admin');
+const authRouter = require('./routes/auth');
 const pmRouter = require('./routes/pm');
 
 const app = express();
@@ -10,11 +9,10 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 
-app.use('/api/admin', adminRouter);
+app.use('/api/admin', authRouter);
 app.use('/api/pm', pmRouter);
-app.use('/api', appointmentsRouter);
 
-app.use(express.static(path.join(__dirname), { extensions: ['html'], index: 'consulting-booking.html' }));
+app.use(express.static(path.join(__dirname), { extensions: ['html'], index: 'pm.html' }));
 
 app.use((err, req, res, next) => {
   console.error(err);
@@ -22,5 +20,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Consulting schedule server listening on port ${PORT}`);
+  console.log(`PM tool server listening on port ${PORT}`);
 });
