@@ -37,12 +37,25 @@ async function collectAll(sources) {
 
 async function main() {
   const config = await loadConfig();
+  const testSend = process.env.TEST_SEND === "true";
 
   const collected = await collectAll(config.sources);
   console.log(`수집된 공고: ${collected.length}건`);
 
   const filtered = filterItems(collected, config.filters);
   console.log(`조건에 맞는 공고: ${filtered.length}건`);
+
+  if (testSend) {
+    const sample = filtered.slice(0, 1);
+    if (sample.length === 0) {
+      console.log("테스트 발송할 공고가 없습니다 (조건에 맞는 공고가 0건).");
+      return;
+    }
+    console.log("테스트 발송 모드: 발송 이력에는 기록하지 않습니다.");
+    await sendDigestEmail(sample, config);
+    console.log(`테스트 이메일 발송 완료: ${sample.length}건`);
+    return;
+  }
 
   const sentIds = await loadSentIds();
   const newItems = filtered.filter((item) => !sentIds.has(itemKey(item)));

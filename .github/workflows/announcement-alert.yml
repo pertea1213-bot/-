@@ -3,7 +3,12 @@ name: 사업공고 자동 알림
 on:
   schedule:
     - cron: "0 0 * * *" # UTC 00:00 = KST 09:00
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      test_send:
+        description: "발송 이력에 남기지 않고 샘플 1건으로 테스트 메일만 보내기"
+        type: boolean
+        default: false
 
 jobs:
   collect-and-notify:
@@ -28,6 +33,7 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           NOTIFY_TO: ${{ secrets.NOTIFY_TO }}
+          TEST_SEND: ${{ inputs.test_send }}
 
       - name: 발송 이력 커밋
         run: |
