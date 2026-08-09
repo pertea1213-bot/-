@@ -73,6 +73,7 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
 
 1. Google 계정에서 [앱 비밀번호](https://myaccount.google.com/apppasswords)를 생성합니다 (2단계 인증 필요).
 2. `.env`의 `GMAIL_USER`에 본인 Gmail 주소, `GMAIL_APP_PASSWORD`에 생성된 앱 비밀번호, `NOTIFY_TO`에 받을 주소를 넣습니다.
+   여러 명에게 보내려면 쉼표로 이어서 씁니다: `NOTIFY_TO=a@example.com,b@example.com`
 
 ## 4. GitHub Actions 활성화
 
@@ -105,3 +106,22 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
 
 - `keywords`를 비워두면(`[]`) 분야와 상관없이 다 봅니다.
 - `regions`는 API 응답 전체(`raw`)를 문자열로 뒤져서 지역명이 포함되어 있는지 봅니다. bizinfo API의 정확한 지역 필드명이 확인되지 않아 택한 방식이라, 관할 기관 주소가 우연히 서울인 전국 단위 공고까지 걸릴 수 있습니다. 며칠 지켜보고 오탐이 많으면 알려주세요 — 필드명을 확인해서 더 정확하게 좁힐 수 있습니다.
+
+## 6. 이메일에 사진·안내문 넣기
+
+`config.json`의 `notify`에서 설정합니다.
+
+```json
+{
+  "notify": {
+    "subjectPrefix": "[사업공고 알림]",
+    "introText": "안녕하세요, 이호정입니다",
+    "photoPath": "assets/photo.jpg"
+  }
+}
+```
+
+- `introText`: 이메일 맨 위에 그대로 들어가는 안내 문구입니다. 여러 줄로 쓰고 싶으면 문자열 안에 줄바꿈을 넣으면 그대로 반영됩니다.
+- `photoPath`: 저장소 안의 이미지 파일 경로(예: `announcement-alert/assets/photo.jpg`라면 `assets/photo.jpg`)입니다. 이미지를 이메일에 첨부해서 본문에 보여줍니다. 비워두면(`""`) 사진 없이 발송됩니다.
+- 사진을 쓰려면 이미지 파일을 저장소의 `announcement-alert/` 아래(예: `announcement-alert/assets/`)에 커밋해두어야 합니다.
+- 두 값 다 모든 발송(기업마당·노사발전재단·SBA)에 공통으로 적용됩니다. 소스별로 다른 안내문/사진을 넣는 기능은 아직 없습니다.

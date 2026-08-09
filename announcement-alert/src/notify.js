@@ -1,13 +1,32 @@
+import { readFile } from "node:fs/promises";
 import nodemailer from "nodemailer";
 
-function renderHtml(items, subjectPrefix) {
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderHtml(items, config) {
+  const { subjectPrefix, introText, photoPath } = config.notify;
+
+  const intro = introText
+    ? `<p style="white-space:pre-line;color:#333;">${escapeHtml(introText)}</p>`
+    : "";
+
+  const photo = photoPath
+    ? `<img src="cid:notifyPhoto" alt="" style="max-width:200px;border-radius:8px;display:block;margin:0 0 16px;"/>`
+    : "";
+
   const rows = items
     .map(
       (item) => `
         <tr>
           <td style="padding:8px 12px;border-bottom:1px solid #ddd;">
-            <a href="${item.url}" style="color:#1a4b8c;text-decoration:none;font-weight:600;">${item.title}</a><br/>
-            <span style="color:#666;font-size:13px;">${item.org}${item.deadline ? ` · ${item.deadline}` : ""}</span>
+            <a href="${escapeHtml(item.url)}" style="color:#1a4b8c;text-decoration:none;font-weight:600;">${escapeHtml(item.title)}</a><br/>
+            <span style="color:#666;font-size:13px;">${escapeHtml(item.org)}${item.deadline ? ` · ${escapeHtml(item.deadline)}` : ""}</span>
           </td>
         </tr>`
     )
@@ -15,7 +34,9 @@ function renderHtml(items, subjectPrefix) {
 
   return `
     <div style="font-family:sans-serif;max-width:640px;margin:0 auto;">
-      <h2>${subjectPrefix} 신규 사업공고 ${items.length}건</h2>
+      ${photo}
+      ${intro}
+      <h2>${escapeHtml(subjectPrefix)} 신규 사업공고 ${items.length}건</h2>
       <table style="width:100%;border-collapse:collapse;">${rows}</table>
     </div>`;
 }
@@ -34,10 +55,21 @@ export async function sendDigestEmail(items, config) {
     auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
   });
 
+  const { photoPath } = config.notify;
+  const attachments = [];
+  if (photoPath) {
+    const fileUrl = new URL(`../${photoPath}`, import.meta.url);
+    const content = await readFile(fileUrl);
+    attachments.push({ filename: "photo.jpg", content, cid: "notifyPhoto" });
+  }
+
+  // NOTIFY_TO에 쉼표로 여러 이메일을 넣으면("a@x.com,b@y.com") nodemailer가 알아서
+  // 여러 명 모두에게 보냅니다.
   await transporter.sendMail({
     from: GMAIL_USER,
     to: NOTIFY_TO,
     subject: `${config.notify.subjectPrefix} 신규 공고 ${items.length}건`,
-    html: renderHtml(items, config.notify.subjectPrefix),
+    html: renderHtml(items, config),
+    attachments,
   });
 }

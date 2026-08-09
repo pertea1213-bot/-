@@ -60,6 +60,8 @@
     "maxDaysUntilDeadline": null
   },
   "notify": {
-    "subjectPrefix": "[사업공고 알림]"
+    "subjectPrefix": "[사업공고 알림]",
+    "introText": "안녕하세요, 이호정입니다",
+    "photoPath": ""
   }
 }
