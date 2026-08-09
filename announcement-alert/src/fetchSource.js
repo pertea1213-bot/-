@@ -15,7 +15,9 @@ export async function fetchSource(source) {
   }
 
   const requestUrl = `${source.url}?${params.toString()}`;
-  const res = await fetch(requestUrl, { headers: { Accept: "application/json" } });
+  const res = await fetch(requestUrl, {
+    headers: { Accept: "application/json", "User-Agent": "Mozilla/5.0" },
+  });
 
   if (!res.ok) {
     throw new Error(`[${source.name}] 요청 실패: HTTP ${res.status}`);

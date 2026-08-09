@@ -28,7 +28,8 @@ async function collectAll(sources) {
     if (result.status === "fulfilled") {
       items.push(...result.value);
     } else {
-      console.error(`[${source.name}] 수집 실패: ${result.reason.message}`);
+      const causeSuffix = result.reason.cause ? ` (원인: ${result.reason.cause})` : "";
+      console.error(`[${source.name}] 수집 실패: ${result.reason.message}${causeSuffix}`);
     }
   });
   return items;
