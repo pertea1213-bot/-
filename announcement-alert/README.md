@@ -115,16 +115,15 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
 {
   "notify": {
     "subjectPrefix": "코코그룹 정책뉴스 클리핑",
-    "photoPath": "assets/photo.jpg",
     "signatureImagePath": "assets/signature.png"
   }
 }
 ```
 
 - `subjectPrefix`: 메일 제목 및 본문 상단 타이틀로 쓰입니다.
-- 상단 헤더: 왼쪽에 `photoPath` 이미지(작은 로고), 오른쪽에 "{연}년 {월}월 {주차}주차 / VOL. {발행 회차}"가 표시됩니다. 발행 회차는 실제 발송(테스트 발송 제외)마다 1씩 자동으로 늘어나며 `data/issue-number.json`에 저장됩니다(GitHub Actions가 커밋).
+- 상단 헤더: 오른쪽 정렬로 "{연}년 {월}월 {주차}주차 / VOL. {발행 회차}"가 표시됩니다. 발행 회차는 실제 발송(테스트 발송 제외)마다 1씩 자동으로 늘어나며 `data/issue-number.json`에 저장됩니다(GitHub Actions가 커밋).
 - `signatureImagePath`: 이메일 맨 아래에 원본 비율 그대로 들어가는 서명/약력 이미지입니다(예: 프로필 카드 이미지). 비워두면(`""`) 표시되지 않습니다.
-- `photoPath`/`signatureImagePath`를 쓰려면 이미지 파일을 저장소의 `announcement-alert/` 아래(예: `announcement-alert/assets/`)에 커밋해두어야 합니다.
+- `signatureImagePath`를 쓰려면 이미지 파일을 저장소의 `announcement-alert/` 아래(예: `announcement-alert/assets/`)에 커밋해두어야 합니다.
 - 모든 값은 모든 발송(기업마당·노사발전재단·SBA)에 공통으로 적용됩니다. 소스별로 다른 이미지를 넣는 기능은 아직 없습니다.
 
 ## 7. 카테고리(영역)별로 묶어서 보내기

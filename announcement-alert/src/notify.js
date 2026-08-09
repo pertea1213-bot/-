@@ -51,22 +51,13 @@ function renderCategorySection(categoryName, items) {
 }
 
 function renderHtml(items, config, issueNumber) {
-  const { subjectPrefix, photoPath, signatureImagePath } = config.notify;
-
-  const photo = photoPath
-    ? `<img src="cid:notifyPhoto" alt="" style="width:56px;height:56px;border-radius:8px;object-fit:cover;display:block;"/>`
-    : "";
+  const { subjectPrefix, signatureImagePath } = config.notify;
 
   const header = `
-    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-      <tr>
-        <td style="width:56px;">${photo}</td>
-        <td style="text-align:right;color:#888;font-size:13px;">
-          ${escapeHtml(formatIssueDate())}<br/>
-          <span style="font-weight:600;">VOL. ${issueNumber}</span>
-        </td>
-      </tr>
-    </table>`;
+    <div style="text-align:right;color:#888;font-size:13px;margin-bottom:16px;">
+      ${escapeHtml(formatIssueDate())}<br/>
+      <span style="font-weight:600;">VOL. ${issueNumber}</span>
+    </div>`;
 
   const fallbackLabel = config.notify.uncategorizedLabel ?? "기타";
   const groups = groupByCategory(items, config.categories ?? [], fallbackLabel);
@@ -103,13 +94,8 @@ export async function sendDigestEmail(items, config, { isTest = false } = {}) {
     auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
   });
 
-  const { photoPath, signatureImagePath } = config.notify;
+  const { signatureImagePath } = config.notify;
   const attachments = [];
-  if (photoPath) {
-    const fileUrl = new URL(`../${photoPath}`, import.meta.url);
-    const content = await readFile(fileUrl);
-    attachments.push({ filename: path.basename(photoPath), content, cid: "notifyPhoto" });
-  }
   if (signatureImagePath) {
     const fileUrl = new URL(`../${signatureImagePath}`, import.meta.url);
     const content = await readFile(fileUrl);

@@ -70,8 +70,7 @@
   ],
   "notify": {
     "subjectPrefix": "코코그룹 정책뉴스 클리핑",
-    "uncategorizedLabel": "기타",
-    "photoPath": "assets/photo.png",
+    "uncategorizedLabel": "오늘의 정책사업",
     "signatureImagePath": "assets/signature.png"
   }
 }
