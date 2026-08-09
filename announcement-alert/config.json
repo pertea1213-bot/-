@@ -72,5 +72,11 @@
     "subjectPrefix": "코코그룹 정책뉴스 클리핑",
     "uncategorizedLabel": "오늘의 정책사업",
     "signatureImagePath": "assets/signature.png"
+  },
+  "news": {
+    "keywords": ["ESG", "주식시장", "금리", "중소기업 지원", "소상공인 지원"],
+    "outlets": ["중앙일보", "조선일보", "한겨레", "경향신문"],
+    "count": 10,
+    "_note": "Google 뉴스 RSS로 언론사・키워드별 기사를 모아 매 발송마다 상위 10건을 뽑습니다. 댓글 수・조회수는 공개 RSS로 알 수 없어서, 여러 키워드에 동시에 걸리는 기사(비중이 큰 기사)를 우선하고 그다음 최신순으로 정렬합니다."
   }
 }

@@ -50,7 +50,31 @@ function renderCategorySection(categoryName, items) {
     <table style="width:100%;border-collapse:collapse;table-layout:fixed;">${rows}</table>`;
 }
 
-function renderHtml(items, config, issueNumber) {
+function renderNewsCard(item) {
+  if (!item) {
+    return `<td style="width:50%;padding:6px;border:none;"></td>`;
+  }
+  const dateLabel = item.pubDate ? new Date(item.pubDate).toLocaleDateString("ko-KR") : "";
+  return `
+    <td style="width:50%;padding:6px;vertical-align:top;">
+      <div style="border:1px solid #ddd;border-radius:6px;padding:12px;height:100%;">
+        <a href="${escapeHtml(item.url)}" style="color:#1a4b8c;text-decoration:none;font-weight:600;font-size:14px;">${escapeHtml(item.title)}</a><br/>
+        <span style="color:#666;font-size:12px;">${escapeHtml(item.org)}${dateLabel ? ` · ${escapeHtml(dateLabel)}` : ""}</span>
+      </div>
+    </td>`;
+}
+
+function renderNewsSection(newsItems) {
+  const rows = chunkPairs(newsItems)
+    .map(([left, right]) => `<tr>${renderNewsCard(left)}${renderNewsCard(right)}</tr>`)
+    .join("");
+
+  return `
+    <h3 style="margin:24px 0 8px;color:#1a4b8c;border-left:4px solid #1a4b8c;padding-left:8px;">오늘의 정책뉴스 (${newsItems.length})</h3>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">${rows}</table>`;
+}
+
+function renderHtml(items, newsItems, config, issueNumber) {
   const { subjectPrefix, signatureImagePath } = config.notify;
 
   const header = `
@@ -65,6 +89,8 @@ function renderHtml(items, config, issueNumber) {
     .map(([categoryName, groupItems]) => renderCategorySection(categoryName, groupItems))
     .join("");
 
+  const newsSection = newsItems.length > 0 ? renderNewsSection(newsItems) : "";
+
   const footer = signatureImagePath
     ? `
       <hr style="border:none;border-top:1px solid #ddd;margin:32px 0 16px;"/>
@@ -76,11 +102,12 @@ function renderHtml(items, config, issueNumber) {
       ${header}
       <h2 style="margin:0 0 16px;">${escapeHtml(subjectPrefix)}</h2>
       ${sections}
+      ${newsSection}
       ${footer}
     </div>`;
 }
 
-export async function sendDigestEmail(items, config, { isTest = false } = {}) {
+export async function sendDigestEmail(items, newsItems, config, { isTest = false } = {}) {
   const { GMAIL_USER, GMAIL_APP_PASSWORD, NOTIFY_TO } = process.env;
 
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD || !NOTIFY_TO) {
@@ -110,7 +137,7 @@ export async function sendDigestEmail(items, config, { isTest = false } = {}) {
     from: GMAIL_USER,
     to: NOTIFY_TO,
     subject: `${config.notify.subjectPrefix} VOL.${issueNumber} (신규 공고 ${items.length}건)`,
-    html: renderHtml(items, config, issueNumber),
+    html: renderHtml(items, newsItems, config, issueNumber),
     attachments,
   });
 }
