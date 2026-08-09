@@ -36,19 +36,31 @@ jobs:
 
             const html = await page.content();
             console.log("LENGTH:", html.length);
+            console.log("FRAME COUNT:", page.frames().length);
+            for (const frame of page.frames()) {
+              console.log("FRAME URL:", frame.url());
+            }
 
             const anchor = process.env.ANCHOR;
-            const idx = html.indexOf(anchor);
-            console.log("ANCHOR INDEX:", idx);
-            if (idx >= 0) {
-              console.log("----- AROUND ANCHOR -----");
-              console.log(html.slice(Math.max(0, idx - 1500), idx + 6000));
-            } else {
-              console.log("----- ANCHOR NOT FOUND: dumping <table> elements -----");
-              const tables = await page.evaluate(() =>
-                Array.from(document.querySelectorAll("table")).map((t) => t.outerHTML.slice(0, 3000))
-              );
-              console.log(tables.join("\n\n===TABLE===\n\n").slice(0, 10000));
+            let found = false;
+            for (const frame of page.frames()) {
+              const fhtml = await frame.content().catch(() => "");
+              const idx = fhtml.indexOf(anchor);
+              if (idx >= 0) {
+                found = true;
+                console.log("----- FOUND IN FRAME:", frame.url(), "-----");
+                console.log(fhtml.slice(Math.max(0, idx - 1500), idx + 6000));
+              }
+            }
+            if (!found) {
+              console.log("----- ANCHOR NOT FOUND IN ANY FRAME: dumping <table> per frame -----");
+              for (const frame of page.frames()) {
+                const tables = await frame
+                  .evaluate(() => Array.from(document.querySelectorAll("table")).map((t) => t.outerHTML.slice(0, 3000)))
+                  .catch((e) => [`EVAL ERROR: ${e.message}`]);
+                console.log("FRAME:", frame.url(), "TABLES:", tables.length);
+                console.log((tables || []).join("\n\n===TABLE===\n\n").slice(0, 6000));
+              }
             }
 
             console.log("----- LINK CANDIDATES (href/onclick 있는 것) -----");
