@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import nodemailer from "nodemailer";
+import { groupByCategory } from "./categorize.js";
 
 function escapeHtml(value) {
   return String(value)
@@ -21,16 +22,27 @@ function renderHtml(items, config) {
     ? `<img src="cid:notifyPhoto" alt="" style="max-width:200px;border-radius:8px;display:block;margin:0 0 16px;"/>`
     : "";
 
-  const rows = items
-    .map(
-      (item) => `
-        <tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #ddd;">
-            <a href="${escapeHtml(item.url)}" style="color:#1a4b8c;text-decoration:none;font-weight:600;">${escapeHtml(item.title)}</a><br/>
-            <span style="color:#666;font-size:13px;">${escapeHtml(item.org)}${item.deadline ? ` · ${escapeHtml(item.deadline)}` : ""}</span>
-          </td>
-        </tr>`
-    )
+  const fallbackLabel = config.notify.uncategorizedLabel ?? "기타";
+  const groups = groupByCategory(items, config.categories ?? [], fallbackLabel);
+
+  const sections = groups
+    .map(([categoryName, groupItems]) => {
+      const rows = groupItems
+        .map(
+          (item) => `
+            <tr>
+              <td style="padding:8px 12px;border-bottom:1px solid #ddd;">
+                <a href="${escapeHtml(item.url)}" style="color:#1a4b8c;text-decoration:none;font-weight:600;">${escapeHtml(item.title)}</a><br/>
+                <span style="color:#666;font-size:13px;">${escapeHtml(item.org)}${item.deadline ? ` · ${escapeHtml(item.deadline)}` : ""}</span>
+              </td>
+            </tr>`
+        )
+        .join("");
+
+      return `
+        <h3 style="margin:20px 0 4px;color:#1a4b8c;">${escapeHtml(categoryName)} (${groupItems.length})</h3>
+        <table style="width:100%;border-collapse:collapse;">${rows}</table>`;
+    })
     .join("");
 
   return `
@@ -38,7 +50,7 @@ function renderHtml(items, config) {
       ${photo}
       ${intro}
       <h2>${escapeHtml(subjectPrefix)} 신규 사업공고 ${items.length}건</h2>
-      <table style="width:100%;border-collapse:collapse;">${rows}</table>
+      ${sections}
     </div>`;
 }
 

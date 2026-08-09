@@ -3,6 +3,7 @@ import { fetchSource } from "./fetchSource.js";
 import { fetchNosaBoard } from "./fetchNosaBoard.js";
 import { fetchSbaApi } from "./fetchSbaApi.js";
 import { filterItems } from "./filter.js";
+import { categorize } from "./categorize.js";
 import { loadSentIds, saveSentIds, itemKey } from "./state.js";
 import { sendDigestEmail } from "./notify.js";
 
@@ -45,8 +46,13 @@ async function main() {
   const filtered = filterItems(collected, config.filters);
   console.log(`조건에 맞는 공고: ${filtered.length}건`);
 
+  const categories = config.categories ?? [];
+  for (const item of filtered) {
+    item.category = categorize(item, categories);
+  }
+
   if (testSend) {
-    const sample = filtered.slice(0, 1);
+    const sample = filtered.slice(0, 8);
     if (sample.length === 0) {
       console.log("테스트 발송할 공고가 없습니다 (조건에 맞는 공고가 0건).");
       return;
