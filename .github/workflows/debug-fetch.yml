@@ -31,8 +31,31 @@ jobs:
           (async () => {
             const browser = await chromium.launch();
             const page = await browser.newPage({ userAgent: "Mozilla/5.0" });
+
+            const apiCalls = [];
+            page.on("response", async (res) => {
+              const url = res.url();
+              const ct = res.headers()["content-type"] || "";
+              if (ct.includes("json") || /\/api\/|\.json/i.test(url)) {
+                let bodySnippet = "";
+                try {
+                  const text = await res.text();
+                  bodySnippet = text.slice(0, 500);
+                } catch {}
+                apiCalls.push({ url, status: res.status(), contentType: ct, bodySnippet });
+              }
+            });
+
             await page.goto(process.env.TARGET_URL, { waitUntil: "networkidle", timeout: 30000 });
-            await page.waitForTimeout(2000);
+            await page.waitForTimeout(3000);
+
+            console.log("===== JSON/API RESPONSES CAPTURED:", apiCalls.length, "=====");
+            for (const call of apiCalls.slice(0, 30)) {
+              console.log("---");
+              console.log("URL:", call.url);
+              console.log("STATUS:", call.status, "CT:", call.contentType);
+              console.log("BODY:", call.bodySnippet);
+            }
 
             console.log("FRAME COUNT:", page.frames().length);
             for (const frame of page.frames()) {
