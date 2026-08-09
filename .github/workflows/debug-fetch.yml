@@ -40,9 +40,18 @@ jobs:
                 let bodySnippet = "";
                 try {
                   const text = await res.text();
-                  bodySnippet = text.slice(0, 500);
+                  bodySnippet = text.slice(0, 1500);
                 } catch {}
-                apiCalls.push({ url, status: res.status(), contentType: ct, bodySnippet });
+                const req = res.request();
+                apiCalls.push({
+                  url,
+                  status: res.status(),
+                  contentType: ct,
+                  method: req.method(),
+                  requestHeaders: req.headers(),
+                  requestBody: req.postData(),
+                  bodySnippet,
+                });
               }
             });
 
@@ -52,9 +61,11 @@ jobs:
             console.log("===== JSON/API RESPONSES CAPTURED:", apiCalls.length, "=====");
             for (const call of apiCalls.slice(0, 30)) {
               console.log("---");
-              console.log("URL:", call.url);
+              console.log("METHOD:", call.method, "URL:", call.url);
               console.log("STATUS:", call.status, "CT:", call.contentType);
-              console.log("BODY:", call.bodySnippet);
+              console.log("REQUEST HEADERS:", JSON.stringify(call.requestHeaders));
+              console.log("REQUEST BODY:", call.requestBody);
+              console.log("RESPONSE BODY:", call.bodySnippet);
             }
 
             console.log("FRAME COUNT:", page.frames().length);
