@@ -1,0 +1,36 @@
+name: 디버그 - 페이지 구조 확인
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "확인할 페이지 URL"
+        required: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: 페이지 가져오기
+        env:
+          TARGET_URL: ${{ inputs.url }}
+        run: |
+          node <<'EOF'
+          const url = process.env.TARGET_URL;
+          fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } })
+            .then(async (res) => {
+              const text = await res.text();
+              console.log("STATUS:", res.status);
+              console.log("LENGTH:", text.length);
+              console.log("----- BODY START -----");
+              console.log(text.slice(0, 6000));
+              console.log("----- BODY END -----");
+            })
+            .catch((err) => {
+              console.error("FETCH ERROR:", err.message);
+              process.exit(1);
+            });
+          EOF
