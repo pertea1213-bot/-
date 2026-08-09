@@ -61,7 +61,7 @@
   },
   "notify": {
     "subjectPrefix": "[사업공고 알림]",
-    "introText": "안녕하세요, 이호정입니다",
+    "introText": "이호정 | (주)콤파스컨설팅그룹 대표경영지도사\nCompass Consulting Group Inc.\n중소기업・소상공인 창업부터 폐업까지 전 주기 진단・지도\n(04373) 서울 용산구 청파로 46, 한통빌딩 608호 (한강로3가)\nT. 070-7795-1891 | M. 010-6368-1891 | E. pertea1213@gmail.com",
     "photoPath": "assets/photo.png"
   }
 }
