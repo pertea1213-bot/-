@@ -1,4 +1,4 @@
-name: 디버그 - 페이지 구조 확인
+name: 디버그 - 페이지 구조 확인 (브라우저 렌더링)
 
 on:
   workflow_dispatch:
@@ -12,46 +12,60 @@ on:
         default: "작성일"
 
 jobs:
-  fetch:
+  render:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: 페이지 가져오기
+      - run: npm install playwright@1.47.0
+      - run: npx playwright install --with-deps chromium
+      - name: 렌더링 후 구조 확인
         env:
           TARGET_URL: ${{ inputs.url }}
           ANCHOR: ${{ inputs.anchor }}
         run: |
           node <<'EOF'
-          const url = process.env.TARGET_URL;
-          const anchor = process.env.ANCHOR;
-          fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } })
-            .then(async (res) => {
-              const text = await res.text();
-              console.log("STATUS:", res.status);
-              console.log("LENGTH:", text.length);
+          const { chromium } = require("playwright");
 
-              const idx = text.indexOf(anchor);
-              console.log("ANCHOR INDEX:", idx);
-              if (idx >= 0) {
-                console.log("----- AROUND ANCHOR -----");
-                console.log(text.slice(Math.max(0, idx - 1500), idx + 6000));
-              } else {
-                console.log("----- TAIL (anchor not found) -----");
-                console.log(text.slice(-6000));
-              }
+          (async () => {
+            const browser = await chromium.launch();
+            const page = await browser.newPage({ userAgent: "Mozilla/5.0" });
+            await page.goto(process.env.TARGET_URL, { waitUntil: "networkidle", timeout: 30000 });
+            await page.waitForTimeout(2000);
 
-              console.log("----- HREFS -----");
-              const hrefs = [...text.matchAll(/href=["']([^"']+)["']/g)].map((m) => m[1]);
-              console.log([...new Set(hrefs)].slice(0, 60).join("\n"));
+            const html = await page.content();
+            console.log("LENGTH:", html.length);
 
-              console.log("----- ONCLICKS -----");
-              const onclicks = [...text.matchAll(/onclick=["']([^"']+)["']/g)].map((m) => m[1]);
-              console.log([...new Set(onclicks)].slice(0, 30).join("\n"));
-            })
-            .catch((err) => {
-              console.error("FETCH ERROR:", err.message);
-              process.exit(1);
-            });
+            const anchor = process.env.ANCHOR;
+            const idx = html.indexOf(anchor);
+            console.log("ANCHOR INDEX:", idx);
+            if (idx >= 0) {
+              console.log("----- AROUND ANCHOR -----");
+              console.log(html.slice(Math.max(0, idx - 1500), idx + 6000));
+            } else {
+              console.log("----- ANCHOR NOT FOUND: dumping <table> elements -----");
+              const tables = await page.evaluate(() =>
+                Array.from(document.querySelectorAll("table")).map((t) => t.outerHTML.slice(0, 3000))
+              );
+              console.log(tables.join("\n\n===TABLE===\n\n").slice(0, 10000));
+            }
+
+            console.log("----- LINK CANDIDATES (href/onclick 있는 것) -----");
+            const links = await page.evaluate(() =>
+              Array.from(document.querySelectorAll("a"))
+                .map((a) => ({
+                  text: a.textContent.trim().slice(0, 50),
+                  href: a.getAttribute("href"),
+                  onclick: a.getAttribute("onclick"),
+                }))
+                .filter((l) => l.text && (l.onclick || (l.href && l.href !== "#" && !l.href.startsWith("javascript:void"))))
+            );
+            console.log(JSON.stringify(links.slice(0, 60), null, 2));
+
+            await browser.close();
+          })().catch((err) => {
+            console.error("ERROR:", err.message);
+            process.exit(1);
+          });
           EOF
