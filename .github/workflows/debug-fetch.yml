@@ -6,6 +6,10 @@ on:
       url:
         description: "확인할 페이지 URL"
         required: true
+      anchor:
+        description: "이 글자 주변을 출력 (기본: 작성일)"
+        required: false
+        default: "작성일"
 
 jobs:
   fetch:
@@ -17,17 +21,34 @@ jobs:
       - name: 페이지 가져오기
         env:
           TARGET_URL: ${{ inputs.url }}
+          ANCHOR: ${{ inputs.anchor }}
         run: |
           node <<'EOF'
           const url = process.env.TARGET_URL;
+          const anchor = process.env.ANCHOR;
           fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } })
             .then(async (res) => {
               const text = await res.text();
               console.log("STATUS:", res.status);
               console.log("LENGTH:", text.length);
-              console.log("----- BODY START -----");
-              console.log(text.slice(0, 6000));
-              console.log("----- BODY END -----");
+
+              const idx = text.indexOf(anchor);
+              console.log("ANCHOR INDEX:", idx);
+              if (idx >= 0) {
+                console.log("----- AROUND ANCHOR -----");
+                console.log(text.slice(Math.max(0, idx - 1500), idx + 6000));
+              } else {
+                console.log("----- TAIL (anchor not found) -----");
+                console.log(text.slice(-6000));
+              }
+
+              console.log("----- HREFS -----");
+              const hrefs = [...text.matchAll(/href=["']([^"']+)["']/g)].map((m) => m[1]);
+              console.log([...new Set(hrefs)].slice(0, 60).join("\n"));
+
+              console.log("----- ONCLICKS -----");
+              const onclicks = [...text.matchAll(/onclick=["']([^"']+)["']/g)].map((m) => m[1]);
+              console.log([...new Set(onclicks)].slice(0, 30).join("\n"));
             })
             .catch((err) => {
               console.error("FETCH ERROR:", err.message);
