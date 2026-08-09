@@ -43,6 +43,14 @@
       "label": "노사발전재단",
       "alwaysInclude": true,
       "_note": "노사발전재단은 전국 단위 단일 기관 공고라 지역(서울/경기) 필터를 적용하지 않고 전부 보여줍니다."
+    },
+    {
+      "name": "sba",
+      "type": "sba-api",
+      "enabled": true,
+      "label": "서울경제진흥원(SBA)",
+      "alwaysInclude": true,
+      "_note": "P_TYPE:ALL로 요청하면 지원사업뿐 아니라 주간소식지·행사 등도 섞여서 옵니다. 너무 잡다하면 알려주세요."
     }
   ],
   "filters": {

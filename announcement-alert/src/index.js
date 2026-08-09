@@ -1,9 +1,15 @@
 import { readFile } from "node:fs/promises";
 import { fetchSource } from "./fetchSource.js";
 import { fetchNosaBoard } from "./fetchNosaBoard.js";
+import { fetchSbaApi } from "./fetchSbaApi.js";
 import { filterItems } from "./filter.js";
 import { loadSentIds, saveSentIds, itemKey } from "./state.js";
 import { sendDigestEmail } from "./notify.js";
+
+const FETCHERS_BY_TYPE = {
+  "nosa-board": fetchNosaBoard,
+  "sba-api": fetchSbaApi,
+};
 
 async function loadConfig() {
   const raw = await readFile(new URL("../config.json", import.meta.url), "utf-8");
@@ -13,7 +19,7 @@ async function loadConfig() {
 async function collectAll(sources) {
   const enabled = sources.filter((s) => s.enabled !== false);
   const results = await Promise.allSettled(
-    enabled.map((s) => (s.type === "nosa-board" ? fetchNosaBoard(s) : fetchSource(s)))
+    enabled.map((s) => (FETCHERS_BY_TYPE[s.type] ?? fetchSource)(s))
   );
 
   const items = [];

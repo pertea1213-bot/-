@@ -9,7 +9,7 @@ GitHub Actions가 매일 정해진 시각에 이 스크립트를 실행합니다
 
 ## 동작 방식
 
-1. `config.json`에 등록된 소스(`bizinfo`, `kstartup`, `nosa-notice`)에서 공고 목록을 가져옵니다.
+1. `config.json`에 등록된 소스(`bizinfo`, `kstartup`, `nosa-notice`, `sba`)에서 공고 목록을 가져옵니다.
 2. `filters.keywords` / `excludeKeywords` / `maxDaysUntilDeadline` 조건으로 걸러냅니다.
 3. `data/sent-ids.json`에 없는(=아직 보내지 않은) 공고만 골라냅니다.
 4. 신규 공고가 있으면 이메일로 한 번에 보냅니다.
@@ -37,6 +37,7 @@ node src/index.js
 | 기업마당 | https://www.bizinfo.go.kr/web/lay1/program/S1T175C174/apiDetail.do?id=bizinfoApi | `crtfcKey` 발급. 발급 후 실제 응답을 한 번 확인해서 `config.json`의 `sources[0].fields`가 실제 필드명과 일치하는지 확인하세요. |
 | K-Startup | https://www.data.go.kr/data/15125364/openapi.do | 이용 신청 후 승인까지 며칠 걸릴 수 있습니다. 승인되면 발급되는 요청 URL과 서비스키를 `config.json`의 `sources[1].url`, `.env`의 `KSTARTUP_API_KEY`에 넣고 `enabled: true`로 바꾸세요. |
 | 노사발전재단 | 필요 없음 | 게시판 HTML을 바로 읽어옵니다. 아래 "노사발전재단" 섹션 참고. |
+| SBA(서울경제진흥원) | 필요 없음 | 홈페이지가 쓰는 내부 API를 그대로 씁니다. 아래 "SBA" 섹션 참고. |
 
 `config.json`의 `fields` 매핑은 실제 API 응답 필드명과 다를 수 있습니다. 스크립트를 한 번 실행해서
 "응답에서 목록을 찾지 못했습니다" 같은 에러가 나오면, `itemsPath`/`fields`를 응답 구조에 맞게 수정하세요.
@@ -54,6 +55,19 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
 지역·주제와 무관하게 이 기관 공고는 전부 보내도록 `config.json`에서 `alwaysInclude: true`로
 설정되어 있습니다 — `filters.keywords`/`regions` 조건을 적용하지 않습니다(`excludeKeywords`와
 `maxDaysUntilDeadline`은 그대로 적용됩니다).
+
+### SBA — 서울경제진흥원 (`sba`)
+
+공개 API가 없어서, sba.seoul.kr 홈페이지 자체가 내부적으로 호출하는
+`POST https://www.sba.seoul.kr/Pages/Main.aspx/GetData`를 그대로 사용합니다
+(`src/fetchSbaApi.js`). 로그인이나 세션 없이도 응답합니다.
+
+- `P_TYPE: "ALL"`로 요청하기 때문에 지원사업 공고뿐 아니라 주간 소식지·행사 안내 같은
+  것도 섞여서 옵니다. 너무 잡다하면 알려주세요 — `P_TYPE` 값을 지원사업 전용으로
+  좁힐 수 있는지 다시 확인해보겠습니다.
+- 상세 페이지 URL이 응답에 없어서 이메일 링크는 일단 홈페이지(`sba.seoul.kr`)로 연결됩니다.
+- `nosa-notice`와 마찬가지로 `alwaysInclude: true`라 지역/키워드 필터 없이 전부 옵니다
+  (서울 소재 기관이라 어차피 지역 필터와 방향이 같습니다).
 
 ## 3. Gmail 발송 설정
 
