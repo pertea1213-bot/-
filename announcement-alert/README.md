@@ -68,7 +68,11 @@ node src/index.js
   "filters": {
     "keywords": ["소상공인", "디지털전환"],
     "excludeKeywords": ["폐업"],
+    "regions": ["서울", "경기"],
     "maxDaysUntilDeadline": 14
   }
 }
 ```
+
+- `keywords`를 비워두면(`[]`) 분야와 상관없이 다 봅니다.
+- `regions`는 API 응답 전체(`raw`)를 문자열로 뒤져서 지역명이 포함되어 있는지 봅니다. bizinfo API의 정확한 지역 필드명이 확인되지 않아 택한 방식이라, 관할 기관 주소가 우연히 서울인 전국 단위 공고까지 걸릴 수 있습니다. 며칠 지켜보고 오탐이 많으면 알려주세요 — 필드명을 확인해서 더 정확하게 좁힐 수 있습니다.

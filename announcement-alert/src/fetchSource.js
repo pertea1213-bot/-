@@ -38,5 +38,6 @@ export async function fetchSource(source) {
     org: raw[f.org] ?? "",
     deadline: raw[f.deadline] ?? "",
     url: raw[f.url] ?? "",
+    raw,
   }));
 }
