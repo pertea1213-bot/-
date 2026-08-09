@@ -39,6 +39,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add announcement-alert/data/sent-ids.json
+          git add announcement-alert/data/sent-ids.json announcement-alert/data/issue-number.json
           git diff --cached --quiet || git commit -m "chore: 사업공고 발송 이력 업데이트"
           git push

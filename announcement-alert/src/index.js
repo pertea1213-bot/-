@@ -58,7 +58,7 @@ async function main() {
       return;
     }
     console.log("테스트 발송 모드: 발송 이력에는 기록하지 않습니다.");
-    await sendDigestEmail(sample, config);
+    await sendDigestEmail(sample, config, { isTest: true });
     console.log(`테스트 이메일 발송 완료: ${sample.length}건`);
     return;
   }
@@ -72,7 +72,7 @@ async function main() {
     return;
   }
 
-  await sendDigestEmail(newItems, config);
+  await sendDigestEmail(newItems, config, { isTest: false });
   console.log(`이메일 발송 완료: ${newItems.length}건`);
 
   for (const item of newItems) sentIds.add(itemKey(item));

@@ -107,29 +107,31 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
 - `keywords`를 비워두면(`[]`) 분야와 상관없이 다 봅니다.
 - `regions`는 API 응답 전체(`raw`)를 문자열로 뒤져서 지역명이 포함되어 있는지 봅니다. bizinfo API의 정확한 지역 필드명이 확인되지 않아 택한 방식이라, 관할 기관 주소가 우연히 서울인 전국 단위 공고까지 걸릴 수 있습니다. 며칠 지켜보고 오탐이 많으면 알려주세요 — 필드명을 확인해서 더 정확하게 좁힐 수 있습니다.
 
-## 6. 이메일에 사진·안내문 넣기
+## 6. 이메일 레이아웃 (뉴스레터 스타일)
 
 `config.json`의 `notify`에서 설정합니다.
 
 ```json
 {
   "notify": {
-    "subjectPrefix": "[사업공고 알림]",
-    "introText": "안녕하세요, 이호정입니다",
-    "photoPath": "assets/photo.jpg"
+    "subjectPrefix": "코코그룹 정책뉴스 클리핑",
+    "photoPath": "assets/photo.jpg",
+    "signatureImagePath": "assets/signature.png"
   }
 }
 ```
 
-- `introText`: 이메일 맨 위에 그대로 들어가는 안내 문구입니다. 여러 줄로 쓰고 싶으면 문자열 안에 줄바꿈을 넣으면 그대로 반영됩니다.
-- `photoPath`: 저장소 안의 이미지 파일 경로(예: `announcement-alert/assets/photo.jpg`라면 `assets/photo.jpg`)입니다. 이미지를 이메일에 첨부해서 본문에 보여줍니다. 비워두면(`""`) 사진 없이 발송됩니다.
-- 사진을 쓰려면 이미지 파일을 저장소의 `announcement-alert/` 아래(예: `announcement-alert/assets/`)에 커밋해두어야 합니다.
-- 두 값 다 모든 발송(기업마당·노사발전재단·SBA)에 공통으로 적용됩니다. 소스별로 다른 안내문/사진을 넣는 기능은 아직 없습니다.
+- `subjectPrefix`: 메일 제목 및 본문 상단 타이틀로 쓰입니다.
+- 상단 헤더: 왼쪽에 `photoPath` 이미지(작은 로고), 오른쪽에 "{연}년 {월}월 {주차}주차 / VOL. {발행 회차}"가 표시됩니다. 발행 회차는 실제 발송(테스트 발송 제외)마다 1씩 자동으로 늘어나며 `data/issue-number.json`에 저장됩니다(GitHub Actions가 커밋).
+- `signatureImagePath`: 이메일 맨 아래에 원본 비율 그대로 들어가는 서명/약력 이미지입니다(예: 프로필 카드 이미지). 비워두면(`""`) 표시되지 않습니다.
+- `photoPath`/`signatureImagePath`를 쓰려면 이미지 파일을 저장소의 `announcement-alert/` 아래(예: `announcement-alert/assets/`)에 커밋해두어야 합니다.
+- 모든 값은 모든 발송(기업마당·노사발전재단·SBA)에 공통으로 적용됩니다. 소스별로 다른 이미지를 넣는 기능은 아직 없습니다.
 
 ## 7. 카테고리(영역)별로 묶어서 보내기
 
 `config.json`의 `categories`에서 설정합니다. 공고 제목·기관명 등에 특정 키워드가 있으면 그 카테고리로 분류해서,
-이메일에서 카테고리별 소제목으로 묶어 보여줍니다.
+이메일에서 카테고리별 소제목 + 좌우 2열 카드 형태로 묶어 보여줍니다(한 카테고리에 공고가 홀수 개면 마지막 줄
+오른쪽 칸은 비워둡니다).
 
 ```json
 {

@@ -69,9 +69,9 @@
     { "name": "소공인・제조", "keywords": ["소공인", "제조업", "작업환경", "스마트공장"] }
   ],
   "notify": {
-    "subjectPrefix": "[사업공고 알림]",
+    "subjectPrefix": "코코그룹 정책뉴스 클리핑",
     "uncategorizedLabel": "기타",
-    "introText": "이호정 | (주)콤파스컨설팅그룹 대표경영지도사\nCompass Consulting Group Inc.\n중소기업・소상공인 창업부터 폐업까지 전 주기 진단・지도\n(04373) 서울 용산구 청파로 46, 한통빌딩 608호 (한강로3가)\nT. 070-7795-1891 | M. 010-6368-1891 | E. pertea1213@gmail.com\n\n중소기업・소상공인 경영전략(인사)・R&D기획・마케팅\n・ 기업회생(재기지원컨설팅) 상담・컨설팅\n・ ESG 강의・실사・심사・컨설팅\n・ 일생활균형 인증 컨설팅・가족친화경영 인증 컨설팅\n・ 인사제도 도입・개선(평가&보상 & 학습조직시스템 구축) / 목표관리(MBO)시스템 구축・교육\n・ 도시형 소공인(도시제조업) 실태조사・작업환경 개선\n・ 스타트업 컨설팅(멘토링)・창업지원(사업계획서 작성)",
-    "photoPath": "assets/photo.png"
+    "photoPath": "assets/photo.png",
+    "signatureImagePath": "assets/signature.png"
   }
 }

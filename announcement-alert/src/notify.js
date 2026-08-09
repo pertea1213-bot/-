@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import nodemailer from "nodemailer";
 import { groupByCategory } from "./categorize.js";
+import { getIssueNumber } from "./issueNumber.js";
 
 function escapeHtml(value) {
   return String(value)
@@ -11,50 +12,84 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
-function renderHtml(items, config) {
-  const { subjectPrefix, introText, photoPath } = config.notify;
+function formatIssueDate(date = new Date()) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const week = Math.ceil(date.getDate() / 7);
+  return `${year}년 ${month}월 ${week}주차`;
+}
 
-  const intro = introText
-    ? `<p style="white-space:pre-line;color:#333;">${escapeHtml(introText)}</p>`
-    : "";
+function chunkPairs(items) {
+  const pairs = [];
+  for (let i = 0; i < items.length; i += 2) {
+    pairs.push([items[i], items[i + 1]]);
+  }
+  return pairs;
+}
 
-  const photo = photoPath
-    ? `<img src="cid:notifyPhoto" alt="" style="max-width:200px;border-radius:8px;display:block;margin:0 0 16px;"/>`
-    : "";
+function renderCard(item) {
+  if (!item) {
+    return `<td style="width:50%;padding:6px;border:none;"></td>`;
+  }
+  return `
+    <td style="width:50%;padding:6px;vertical-align:top;">
+      <div style="border:1px solid #ddd;border-radius:6px;padding:12px;height:100%;">
+        <a href="${escapeHtml(item.url)}" style="color:#1a4b8c;text-decoration:none;font-weight:600;font-size:14px;">${escapeHtml(item.title)}</a><br/>
+        <span style="color:#666;font-size:12px;">${escapeHtml(item.org)}${item.deadline ? ` · ${escapeHtml(item.deadline)}` : ""}</span>
+      </div>
+    </td>`;
+}
 
-  const fallbackLabel = config.notify.uncategorizedLabel ?? "기타";
-  const groups = groupByCategory(items, config.categories ?? [], fallbackLabel);
-
-  const sections = groups
-    .map(([categoryName, groupItems]) => {
-      const rows = groupItems
-        .map(
-          (item) => `
-            <tr>
-              <td style="padding:8px 12px;border-bottom:1px solid #ddd;">
-                <a href="${escapeHtml(item.url)}" style="color:#1a4b8c;text-decoration:none;font-weight:600;">${escapeHtml(item.title)}</a><br/>
-                <span style="color:#666;font-size:13px;">${escapeHtml(item.org)}${item.deadline ? ` · ${escapeHtml(item.deadline)}` : ""}</span>
-              </td>
-            </tr>`
-        )
-        .join("");
-
-      return `
-        <h3 style="margin:20px 0 4px;color:#1a4b8c;">${escapeHtml(categoryName)} (${groupItems.length})</h3>
-        <table style="width:100%;border-collapse:collapse;">${rows}</table>`;
-    })
+function renderCategorySection(categoryName, items) {
+  const rows = chunkPairs(items)
+    .map(([left, right]) => `<tr>${renderCard(left)}${renderCard(right)}</tr>`)
     .join("");
 
   return `
+    <h3 style="margin:24px 0 8px;color:#1a4b8c;border-left:4px solid #1a4b8c;padding-left:8px;">${escapeHtml(categoryName)} (${items.length})</h3>
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">${rows}</table>`;
+}
+
+function renderHtml(items, config, issueNumber) {
+  const { subjectPrefix, photoPath, signatureImagePath } = config.notify;
+
+  const photo = photoPath
+    ? `<img src="cid:notifyPhoto" alt="" style="width:56px;height:56px;border-radius:8px;object-fit:cover;display:block;"/>`
+    : "";
+
+  const header = `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+      <tr>
+        <td style="width:56px;">${photo}</td>
+        <td style="text-align:right;color:#888;font-size:13px;">
+          ${escapeHtml(formatIssueDate())}<br/>
+          <span style="font-weight:600;">VOL. ${issueNumber}</span>
+        </td>
+      </tr>
+    </table>`;
+
+  const fallbackLabel = config.notify.uncategorizedLabel ?? "기타";
+  const groups = groupByCategory(items, config.categories ?? [], fallbackLabel);
+  const sections = groups
+    .map(([categoryName, groupItems]) => renderCategorySection(categoryName, groupItems))
+    .join("");
+
+  const footer = signatureImagePath
+    ? `
+      <hr style="border:none;border-top:1px solid #ddd;margin:32px 0 16px;"/>
+      <img src="cid:notifySignature" alt="" style="max-width:100%;display:block;"/>`
+    : "";
+
+  return `
     <div style="font-family:sans-serif;max-width:640px;margin:0 auto;">
-      ${photo}
-      ${intro}
-      <h2>${escapeHtml(subjectPrefix)} 신규 사업공고 ${items.length}건</h2>
+      ${header}
+      <h2 style="margin:0 0 16px;">${escapeHtml(subjectPrefix)}</h2>
       ${sections}
+      ${footer}
     </div>`;
 }
 
-export async function sendDigestEmail(items, config) {
+export async function sendDigestEmail(items, config, { isTest = false } = {}) {
   const { GMAIL_USER, GMAIL_APP_PASSWORD, NOTIFY_TO } = process.env;
 
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD || !NOTIFY_TO) {
@@ -68,21 +103,28 @@ export async function sendDigestEmail(items, config) {
     auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
   });
 
-  const { photoPath } = config.notify;
+  const { photoPath, signatureImagePath } = config.notify;
   const attachments = [];
   if (photoPath) {
     const fileUrl = new URL(`../${photoPath}`, import.meta.url);
     const content = await readFile(fileUrl);
     attachments.push({ filename: path.basename(photoPath), content, cid: "notifyPhoto" });
   }
+  if (signatureImagePath) {
+    const fileUrl = new URL(`../${signatureImagePath}`, import.meta.url);
+    const content = await readFile(fileUrl);
+    attachments.push({ filename: path.basename(signatureImagePath), content, cid: "notifySignature" });
+  }
+
+  const issueNumber = await getIssueNumber({ increment: !isTest });
 
   // NOTIFY_TO에 쉼표로 여러 이메일을 넣으면("a@x.com,b@y.com") nodemailer가 알아서
   // 여러 명 모두에게 보냅니다.
   await transporter.sendMail({
     from: GMAIL_USER,
     to: NOTIFY_TO,
-    subject: `${config.notify.subjectPrefix} 신규 공고 ${items.length}건`,
-    html: renderHtml(items, config),
+    subject: `${config.notify.subjectPrefix} VOL.${issueNumber} (신규 공고 ${items.length}건)`,
+    html: renderHtml(items, config, issueNumber),
     attachments,
   });
 }
