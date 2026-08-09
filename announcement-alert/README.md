@@ -84,6 +84,7 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
 - `GMAIL_USER`
 - `GMAIL_APP_PASSWORD`
 - `NOTIFY_TO`
+- `ANTHROPIC_API_KEY` (선택 — "오늘의 논평" 자동 작성에 씁니다. 없으면 그 섹션만 생략되고 나머지는 정상 발송됩니다. 자세한 내용은 9번 항목 참고)
 
 등록 후 **Actions** 탭에서 `사업공고 자동 알림` 워크플로를 열고 **Run workflow**로 한 번 수동 실행해서
 정상 동작을 확인하세요. 이후에는 매일 KST 09:00에 자동 실행됩니다 (`.github/workflows/announcement-alert.yml`의
@@ -167,3 +168,24 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
 - 지원 언론사(도메인 매핑)는 현재 중앙일보・조선일보・한겨레・경향신문 4곳입니다. 다른 언론사를 추가하려면 `src/fetchNews.js`의 `OUTLET_DOMAINS`에 도메인을 추가하세요.
 - 매 발송(테스트 포함)마다 새로 검색하며, 발송 이력(`sent-ids.json`)과 무관하게 그날의 상위 기사를 다시 뽑습니다.
 - `news`를 비워두거나(`{}`) `keywords`/`outlets`를 빈 배열로 두면 뉴스 섹션 없이 기존처럼 사업공고만 발송됩니다.
+
+## 9. "오늘의 논평" — AI가 쓰는 경제 논평
+
+`config.json`의 `commentary`에서 설정합니다. "오늘의 정책뉴스"에서 모은 헤드라인을 근거로 AI가 짧은 논평을
+작성해서, 제목 바로 아래에 별도 박스로 넣습니다.
+
+```json
+{
+  "commentary": {
+    "author": "이호정 경영지도사",
+    "stance": "한국 중소기업과 소상공인에 대한 적극적인 지원이 필요하다",
+    "model": "claude-haiku-4-5-20251001"
+  }
+}
+```
+
+- 동작 방식: `src/writeCommentary.js`가 그날의 "오늘의 정책뉴스" 헤드라인 목록을 Anthropic API(`api.anthropic.com/v1/messages`)에 보내서, `author` 명의로 `stance` 논조의 200~300자 논평을 받아옵니다. 별도로 기사를 더 수집하지 않고 이미 모은 뉴스 헤드라인을 그대로 재사용합니다.
+- **`ANTHROPIC_API_KEY` 저장소 시크릿이 꼭 필요합니다.** [console.anthropic.com](https://console.anthropic.com/settings/keys)에서 API 키를 발급받아 저장소 **Settings → Secrets and variables → Actions**에 `ANTHROPIC_API_KEY`로 등록하세요. 등록하지 않으면 이 섹션은 에러 없이 조용히 생략되고 나머지(사업공고·정책뉴스)는 평소처럼 발송됩니다.
+- `stance`를 바꾸면 논조를, `author`를 바꾸면 서명을 바꿀 수 있습니다.
+- 그날 수집된 뉴스가 0건이면(예: `news` 설정을 비워둔 경우) 논평도 생략됩니다.
+- API 사용량에 따라 Anthropic 요금이 발생합니다 — 하루 한 번(또는 테스트 발송 시마다) 짧은 논평 하나를 생성하는 정도라 비용은 크지 않습니다.

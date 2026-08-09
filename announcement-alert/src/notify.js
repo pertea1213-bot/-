@@ -74,7 +74,16 @@ function renderNewsSection(newsItems) {
     <table style="width:100%;border-collapse:collapse;table-layout:fixed;">${rows}</table>`;
 }
 
-function renderHtml(items, newsItems, config, issueNumber) {
+function renderCommentarySection(commentary) {
+  if (!commentary) return "";
+  return `
+    <div style="background:#f4f7fb;border-left:4px solid #1a4b8c;border-radius:6px;padding:16px;margin-bottom:24px;">
+      <div style="font-size:12px;color:#1a4b8c;font-weight:600;margin-bottom:8px;">오늘의 논평</div>
+      <div style="white-space:pre-line;color:#333;font-size:14px;line-height:1.7;">${escapeHtml(commentary)}</div>
+    </div>`;
+}
+
+function renderHtml(items, newsItems, commentary, config, issueNumber) {
   const { subjectPrefix, signatureImagePath } = config.notify;
 
   const header = `
@@ -101,13 +110,14 @@ function renderHtml(items, newsItems, config, issueNumber) {
     <div style="font-family:sans-serif;max-width:640px;margin:0 auto;">
       ${header}
       <h2 style="margin:0 0 16px;">${escapeHtml(subjectPrefix)}</h2>
+      ${renderCommentarySection(commentary)}
       ${sections}
       ${newsSection}
       ${footer}
     </div>`;
 }
 
-export async function sendDigestEmail(items, newsItems, config, { isTest = false } = {}) {
+export async function sendDigestEmail(items, newsItems, commentary, config, { isTest = false } = {}) {
   const { GMAIL_USER, GMAIL_APP_PASSWORD, NOTIFY_TO } = process.env;
 
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD || !NOTIFY_TO) {
@@ -137,7 +147,7 @@ export async function sendDigestEmail(items, newsItems, config, { isTest = false
     from: GMAIL_USER,
     to: NOTIFY_TO,
     subject: `${config.notify.subjectPrefix} VOL.${issueNumber} (신규 공고 ${items.length}건)`,
-    html: renderHtml(items, newsItems, config, issueNumber),
+    html: renderHtml(items, newsItems, commentary, config, issueNumber),
     attachments,
   });
 }

@@ -3,6 +3,7 @@ import { fetchSource } from "./fetchSource.js";
 import { fetchNosaBoard } from "./fetchNosaBoard.js";
 import { fetchSbaApi } from "./fetchSbaApi.js";
 import { fetchNewsItems } from "./fetchNews.js";
+import { writeCommentary } from "./writeCommentary.js";
 import { filterItems } from "./filter.js";
 import { categorize } from "./categorize.js";
 import { loadSentIds, saveSentIds, itemKey } from "./state.js";
@@ -55,6 +56,14 @@ async function main() {
   const newsItems = await fetchNewsItems(config.news);
   console.log(`오늘의 정책뉴스 수집: ${newsItems.length}건`);
 
+  let commentary = null;
+  try {
+    commentary = await writeCommentary(newsItems, config.commentary);
+    console.log(commentary ? "오늘의 논평 작성 완료" : "오늘의 논평 생략 (ANTHROPIC_API_KEY 미설정 또는 뉴스 없음)");
+  } catch (err) {
+    console.error(`논평 작성 실패: ${err.message}`);
+  }
+
   if (testSend) {
     const sample = filtered.slice(0, 8);
     if (sample.length === 0) {
@@ -62,7 +71,7 @@ async function main() {
       return;
     }
     console.log("테스트 발송 모드: 발송 이력에는 기록하지 않습니다.");
-    await sendDigestEmail(sample, newsItems, config, { isTest: true });
+    await sendDigestEmail(sample, newsItems, commentary, config, { isTest: true });
     console.log(`테스트 이메일 발송 완료: ${sample.length}건`);
     return;
   }
@@ -76,7 +85,7 @@ async function main() {
     return;
   }
 
-  await sendDigestEmail(newItems, newsItems, config, { isTest: false });
+  await sendDigestEmail(newItems, newsItems, commentary, config, { isTest: false });
   console.log(`이메일 발송 완료: ${newItems.length}건`);
 
   for (const item of newItems) sentIds.add(itemKey(item));
