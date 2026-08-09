@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { fetchSource } from "./fetchSource.js";
+import { fetchNosaBoard } from "./fetchNosaBoard.js";
 import { filterItems } from "./filter.js";
 import { loadSentIds, saveSentIds, itemKey } from "./state.js";
 import { sendDigestEmail } from "./notify.js";
@@ -10,13 +11,14 @@ async function loadConfig() {
 }
 
 async function collectAll(sources) {
+  const enabled = sources.filter((s) => s.enabled !== false);
   const results = await Promise.allSettled(
-    sources.filter((s) => s.enabled !== false).map((s) => fetchSource(s))
+    enabled.map((s) => (s.type === "nosa-board" ? fetchNosaBoard(s) : fetchSource(s)))
   );
 
   const items = [];
   results.forEach((result, i) => {
-    const source = sources[i];
+    const source = enabled[i];
     if (result.status === "fulfilled") {
       items.push(...result.value);
     } else {

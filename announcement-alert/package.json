@@ -9,6 +9,7 @@
     "start": "node src/index.js"
   },
   "dependencies": {
+    "node-html-parser": "^6.1.13",
     "nodemailer": "^6.9.14"
   }
 }

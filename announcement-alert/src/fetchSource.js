@@ -36,6 +36,7 @@ export async function fetchSource(source) {
     id: String(raw[f.id] ?? ""),
     title: raw[f.title] ?? "(제목 없음)",
     org: raw[f.org] ?? "",
+    alwaysInclude: source.alwaysInclude === true,
     deadline: raw[f.deadline] ?? "",
     url: raw[f.url] ?? "",
     raw,

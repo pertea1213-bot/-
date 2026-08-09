@@ -34,6 +34,15 @@
         "url": "detailPageUrl"
       },
       "_note": "승인 대기 중이라면 enabled를 false로 두세요. 승인 후 url과 fields를 실제 응답에 맞게 수정하고 enabled를 true로 바꿉니다."
+    },
+    {
+      "name": "nosa-notice",
+      "type": "nosa-board",
+      "enabled": true,
+      "boardId": "nosa05",
+      "label": "노사발전재단",
+      "alwaysInclude": true,
+      "_note": "노사발전재단은 전국 단위 단일 기관 공고라 지역(서울/경기) 필터를 적용하지 않고 전부 보여줍니다."
     }
   ],
   "filters": {

@@ -9,7 +9,7 @@ GitHub Actions가 매일 정해진 시각에 이 스크립트를 실행합니다
 
 ## 동작 방식
 
-1. `config.json`에 등록된 소스(`bizinfo`, `kstartup`)에서 공고 목록을 가져옵니다.
+1. `config.json`에 등록된 소스(`bizinfo`, `kstartup`, `nosa-notice`)에서 공고 목록을 가져옵니다.
 2. `filters.keywords` / `excludeKeywords` / `maxDaysUntilDeadline` 조건으로 걸러냅니다.
 3. `data/sent-ids.json`에 없는(=아직 보내지 않은) 공고만 골라냅니다.
 4. 신규 공고가 있으면 이메일로 한 번에 보냅니다.
@@ -36,9 +36,24 @@ node src/index.js
 | --- | --- | --- |
 | 기업마당 | https://www.bizinfo.go.kr/web/lay1/program/S1T175C174/apiDetail.do?id=bizinfoApi | `crtfcKey` 발급. 발급 후 실제 응답을 한 번 확인해서 `config.json`의 `sources[0].fields`가 실제 필드명과 일치하는지 확인하세요. |
 | K-Startup | https://www.data.go.kr/data/15125364/openapi.do | 이용 신청 후 승인까지 며칠 걸릴 수 있습니다. 승인되면 발급되는 요청 URL과 서비스키를 `config.json`의 `sources[1].url`, `.env`의 `KSTARTUP_API_KEY`에 넣고 `enabled: true`로 바꾸세요. |
+| 노사발전재단 | 필요 없음 | 게시판 HTML을 바로 읽어옵니다. 아래 "노사발전재단" 섹션 참고. |
 
 `config.json`의 `fields` 매핑은 실제 API 응답 필드명과 다를 수 있습니다. 스크립트를 한 번 실행해서
 "응답에서 목록을 찾지 못했습니다" 같은 에러가 나오면, `itemsPath`/`fields`를 응답 구조에 맞게 수정하세요.
+
+### 노사발전재단 (`nosa-notice`)
+
+API/RSS가 따로 없어서 `https://www.nosa.or.kr/board/list.brd?boardId=nosa05` ("사업공고/모집" 게시판)의
+HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사용). 키·발급 절차가 필요 없어
+바로 동작합니다. 다만 두 가지 한계가 있습니다.
+
+- 상세 페이지가 자바스크립트(`ebList.readBulletin(...)`)로만 열려서 실제 글 주소를 확인하지 못했습니다.
+  이메일의 링크는 일단 목록 페이지로 연결됩니다.
+- 목록에 있는 날짜는 마감일이 아니라 **게시일**입니다. 실제 마감일을 보려면 첨부파일을 열어야 합니다.
+
+지역·주제와 무관하게 이 기관 공고는 전부 보내도록 `config.json`에서 `alwaysInclude: true`로
+설정되어 있습니다 — `filters.keywords`/`regions` 조건을 적용하지 않습니다(`excludeKeywords`와
+`maxDaysUntilDeadline`은 그대로 적용됩니다).
 
 ## 3. Gmail 발송 설정
 

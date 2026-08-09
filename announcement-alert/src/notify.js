@@ -7,7 +7,7 @@ function renderHtml(items, subjectPrefix) {
         <tr>
           <td style="padding:8px 12px;border-bottom:1px solid #ddd;">
             <a href="${item.url}" style="color:#1a4b8c;text-decoration:none;font-weight:600;">${item.title}</a><br/>
-            <span style="color:#666;font-size:13px;">${item.org}${item.deadline ? ` · 마감 ${item.deadline}` : ""}</span>
+            <span style="color:#666;font-size:13px;">${item.org}${item.deadline ? ` · ${item.deadline}` : ""}</span>
           </td>
         </tr>`
     )
