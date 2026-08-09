@@ -1,0 +1,47 @@
+{
+  "sources": [
+    {
+      "name": "bizinfo",
+      "enabled": true,
+      "url": "https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do",
+      "query": {
+        "crtfcKey": "${BIZINFO_API_KEY}",
+        "dataType": "json"
+      },
+      "itemsPath": "jsonArray",
+      "fields": {
+        "id": "pblancId",
+        "title": "pblancNm",
+        "org": "jrsdInsttNm",
+        "deadline": "reqstEndDe",
+        "url": "pblancUrl"
+      },
+      "_note": "필드명은 https://www.bizinfo.go.kr/web/lay1/program/S1T175C174/apiDetail.do?id=bizinfoApi 문서에서 실제 응답을 확인 후 맞춰주세요. crtfcKey는 같은 페이지에서 발급받습니다."
+    },
+    {
+      "name": "kstartup",
+      "enabled": false,
+      "url": "TODO: data.go.kr에서 이용 승인 후 발급되는 요청 URL을 입력하세요 (data.go.kr/data/15125364/openapi.do)",
+      "query": {
+        "serviceKey": "${KSTARTUP_API_KEY}"
+      },
+      "itemsPath": "data",
+      "fields": {
+        "id": "pbancSn",
+        "title": "bizPbancNm",
+        "org": "pbancNtceInsttNm",
+        "deadline": "pbancRcptEndDt",
+        "url": "detailPageUrl"
+      },
+      "_note": "승인 대기 중이라면 enabled를 false로 두세요. 승인 후 url과 fields를 실제 응답에 맞게 수정하고 enabled를 true로 바꿉니다."
+    }
+  ],
+  "filters": {
+    "keywords": ["소상공인"],
+    "excludeKeywords": [],
+    "maxDaysUntilDeadline": null
+  },
+  "notify": {
+    "subjectPrefix": "[사업공고 알림]"
+  }
+}
