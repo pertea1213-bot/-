@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 import nodemailer from "nodemailer";
 
 function escapeHtml(value) {
@@ -60,7 +61,7 @@ export async function sendDigestEmail(items, config) {
   if (photoPath) {
     const fileUrl = new URL(`../${photoPath}`, import.meta.url);
     const content = await readFile(fileUrl);
-    attachments.push({ filename: "photo.jpg", content, cid: "notifyPhoto" });
+    attachments.push({ filename: path.basename(photoPath), content, cid: "notifyPhoto" });
   }
 
   // NOTIFY_TO에 쉼표로 여러 이메일을 넣으면("a@x.com,b@y.com") nodemailer가 알아서
