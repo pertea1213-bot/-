@@ -37,7 +37,8 @@ ${headlineList}
   });
 
   if (!res.ok) {
-    throw new Error(`Anthropic API 요청 실패: HTTP ${res.status}`);
+    const body = await res.text();
+    throw new Error(`Anthropic API 요청 실패: HTTP ${res.status} - ${body}`);
   }
 
   const data = await res.json();
