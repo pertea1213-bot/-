@@ -2,7 +2,7 @@ name: 사업공고 자동 알림
 
 on:
   schedule:
-    - cron: "0 0 * * *" # UTC 00:00 = KST 09:00
+    - cron: "5 0 * * *" # UTC 00:05 = KST 09:05 (정각은 전 세계적으로 몰려서 지연/누락되기 쉬워 5분 뒤로 비켜둠)
   workflow_dispatch:
     inputs:
       test_send:
