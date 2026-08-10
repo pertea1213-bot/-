@@ -71,8 +71,14 @@
   ],
   "notify": {
     "subjectPrefix": "코코그룹 정책뉴스 클리핑",
+    "tagline": "중소기업・소상공인과 함께 성장하는",
+    "bannerSubtitle": "사업공고・정책뉴스・논평까지, 한 번에 확인하는 코코그룹 정책 소식지입니다.",
     "uncategorizedLabel": "오늘의 정책사업",
-    "signatureImagePath": "assets/signature.png"
+    "signatureImagePath": "assets/signature.png",
+    "footer": {
+      "companyName": "(주)콤파스컨설팅그룹",
+      "address": "(04373) 서울 용산구 청파로 46, 한통빌딩 608호 (한강로3가)"
+    }
   },
   "news": {
     "keywords": ["ESG", "주식시장", "금리", "중소기업 지원", "소상공인 지원"],
