@@ -21,6 +21,7 @@ npm start        # http://localhost:5000
 
 - `pm.html`: 로그인 후 전체 프로젝트/진행중/작업/지연 통계, 새 프로젝트 생성, 프로젝트 목록(진행률 표시)
 - `pm-project.html`: 프로젝트 정보 수정, 마일스톤 체크리스트, 칸반 보드(할 일/진행중/완료)로 작업 관리
+- `companies.html`: 기업정보 등록/검색/수정/삭제 (기업명, 사업자등록번호, 대표자, 업종, 지역, 담당자 연락처 등)
 - 데이터는 `data/pm.db` (SQLite)에 저장됩니다.
 
 ### 관리자 비밀번호
@@ -42,3 +43,6 @@ ADMIN_PASSWORD=원하는비밀번호 npm start
 | PATCH/DELETE | `/api/pm/tasks/:id` | 작업 수정(상태 이동 포함) / 삭제 |
 | POST | `/api/pm/projects/:id/milestones` | 마일스톤 추가 |
 | PATCH/DELETE | `/api/pm/milestones/:id` | 마일스톤 수정(완료 체크) / 삭제 |
+| GET | `/api/companies?q=검색어` | 기업 목록 조회 (기업명/사업자등록번호/대표자/업종 검색) |
+| POST | `/api/companies` | 기업정보 등록 |
+| GET/PATCH/DELETE | `/api/companies/:id` | 기업정보 조회 / 수정 / 삭제 |
