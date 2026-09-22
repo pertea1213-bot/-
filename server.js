@@ -4,6 +4,7 @@ const express = require('express');
 const authRouter = require('./routes/auth');
 const pmRouter = require('./routes/pm');
 const companiesRouter = require('./routes/companies');
+const surveysRouter = require('./routes/surveys');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -13,6 +14,7 @@ app.use(express.json());
 app.use('/api/admin', authRouter);
 app.use('/api/pm', pmRouter);
 app.use('/api/companies', companiesRouter);
+app.use('/api/surveys', surveysRouter);
 
 app.use(express.static(path.join(__dirname), { extensions: ['html'], index: 'pm.html' }));
 
