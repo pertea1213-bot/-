@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기업정보 대시보드</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f0f4f8; color: #1a202c; min-height: 100vh; padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  .topnav { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .topnav .links { display: flex; gap: 16px; }
+  .topnav a { color: #4a5568; text-decoration: none; font-size: 0.9rem; }
+  .topnav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.6rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 24px; }
+  .card h2 { font-size: 1.05rem; margin-bottom: 14px; color: #2d3748; }
+  label { display: block; font-size: 0.82rem; color: #4a5568; margin-bottom: 5px; font-weight: 600; }
+  input { width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+  input:focus { outline: none; border-color: #4299e1; }
+  .btn-primary { padding: 9px 16px; border: none; border-radius: 8px; background: #4299e1; color: #fff; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+  .btn-primary:hover { background: #3182ce; }
+  .btn-secondary { padding: 6px 12px; border: 1px solid #cbd5e0; border-radius: 8px; background: #fff; color: #4a5568; font-size: 0.78rem; cursor: pointer; }
+  .btn-secondary:hover { background: #f7fafc; }
+  .btn-danger { padding: 6px 12px; border: 1px solid #fc8181; border-radius: 8px; background: #fff; color: #e53e3e; font-size: 0.78rem; cursor: pointer; }
+  .btn-danger:hover { background: #fff5f5; }
+  #login-view { max-width: 360px; margin: 60px auto; }
+  .msg { margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; display: none; }
+  .msg.error { display: block; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+  .msg.success { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-tile { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+  .stat-tile .num { font-size: 1.7rem; font-weight: 700; color: #2d3748; }
+  .stat-tile .label { font-size: 0.8rem; color: #a0aec0; margin-top: 4px; }
+  .toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; }
+  .toolbar input { flex: 1; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; padding: 8px 10px; color: #718096; font-size: 0.78rem; border-bottom: 2px solid #edf2f7; }
+  td { padding: 10px; border-bottom: 1px solid #f7fafc; }
+  tr:hover td { background: #f7fafc; }
+  .name-cell { font-weight: 700; cursor: pointer; color: #2b6cb0; }
+  .name-cell:hover { text-decoration: underline; }
+  .empty { color: #a0aec0; padding: 24px; text-align: center; }
+  .action-cell { display: flex; gap: 6px; }
+  .detail-section { margin-bottom: 18px; }
+  .detail-section h3 { font-size: 0.92rem; color: #2b6cb0; border-bottom: 2px solid #bee3f8; padding-bottom: 6px; margin-bottom: 10px; }
+  .kv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 20px; font-size: 0.85rem; margin-bottom: 8px; }
+  .kv-grid .k { color: #718096; }
+  .kv-grid .v { font-weight: 600; }
+  .rep-list { font-size: 0.82rem; color: #4a5568; margin: 4px 0; }
+  .rep-list div { padding: 3px 0; border-bottom: 1px dashed #edf2f7; }
+  .img-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .img-grid img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; }
+  .file-chip { display: inline-block; background: #edf2f7; border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; margin: 3px 4px 3px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav">
+    <div class="links"><a href="pm.html">PM 관리 툴</a><a href="companies.html">기업정보 관리</a><a href="survey.html" target="_blank">기업조사표 입력폼</a></div>
+    <a href="#" id="logout-link" style="display:none;">로그아웃</a>
+  </div>
+
+  <div id="login-view">
+    <h1>대시보드 로그인</h1>
+    <div class="card">
+      <form id="login-form">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" required>
+        <button type="submit" class="btn-primary" style="width:100%; margin-top:16px;">로그인</button>
+        <div id="login-msg" class="msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard-view" style="display:none;">
+    <h1>기업정보 대시보드</h1>
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div id="list-panel" class="card">
+      <h2>제출된 기업조사표</h2>
+      <div class="toolbar">
+        <input type="text" id="search-input" placeholder="기업명, 사업자등록번호, 대표자로 검색">
+        <button type="button" class="btn-primary" id="export-excel-btn">전체 엑셀 다운로드</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>업체명</th><th>대표자</th><th>종업원수</th><th>매출액(백만원)</th><th>첨부</th><th>제출일</th><th></th></tr></thead>
+          <tbody id="survey-tbody"></tbody>
+        </table>
+      </div>
+      <div id="list-empty" class="empty" style="display:none;">제출된 기업조사표가 없습니다.</div>
+    </div>
+
+    <div id="detail-panel" class="card" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <button type="button" class="btn-secondary" id="back-to-list">← 목록으로</button>
+        <div class="action-cell">
+          <button type="button" class="btn-primary" id="detail-pdf-btn">PDF 다운로드</button>
+          <button type="button" class="btn-danger" id="detail-delete-btn">삭제</button>
+        </div>
+      </div>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN_KEY = 'consulting_admin_token';
+const loginView = document.getElementById('login-view');
+const dashboardView = document.getElementById('dashboard-view');
+const logoutLink = document.getElementById('logout-link');
+const listPanel = document.getElementById('list-panel');
+const detailPanel = document.getElementById('detail-panel');
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+function showMsg(el, text, type) { el.textContent = text; el.className = 'msg ' + type; }
+function clearMsg(el) { el.textContent = ''; el.className = 'msg'; }
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function fmt(v) { return (v === null || v === undefined || v === '') ? '-' : v; }
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { Authorization: `Bearer ${getToken()}`, ...(options.headers || {}) },
+  });
+  if (res.status === 401) {
+    clearToken();
+    renderAuthState();
+    throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+  }
+  return res;
+}
+
+function renderAuthState() {
+  if (getToken()) {
+    loginView.style.display = 'none';
+    dashboardView.style.display = 'block';
+    logoutLink.style.display = 'inline';
+    loadStats();
+    loadList();
+  } else {
+    loginView.style.display = 'block';
+    dashboardView.style.display = 'none';
+    logoutLink.style.display = 'none';
+  }
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const loginMsg = document.getElementById('login-msg');
+  clearMsg(loginMsg);
+  const password = document.getElementById('password').value;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsg(loginMsg, data.error || '로그인에 실패했습니다.', 'error'); return; }
+    setToken(data.token);
+    renderAuthState();
+  } catch (err) {
+    showMsg(loginMsg, '네트워크 오류가 발생했습니다.', 'error');
+  }
+});
+
+logoutLink.addEventListener('click', (e) => { e.preventDefault(); clearToken(); renderAuthState(); });
+
+async function loadStats() {
+  try {
+    const res = await apiFetch('/api/surveys/summary');
+    const s = await res.json();
+    const tiles = [
+      ['제출 기업 수', s.totalCompanies],
+      ['총 종업원수 합계', s.totalEmployees],
+      ['평균 매출액(백만원)', s.avgRevenueMillion ?? '-'],
+      ['최근 7일 제출', s.submissionsLast7Days],
+      ['마케팅 전담부서 보유', s.marketingDeptYesCount],
+    ];
+    document.getElementById('stats-grid').innerHTML = tiles.map(([label, num]) => `
+      <div class="stat-tile"><div class="num">${num}</div><div class="label">${label}</div></div>
+    `).join('');
+  } catch (err) { /* handled in apiFetch */ }
+}
+
+let currentSurveys = [];
+async function loadList() {
+  const q = document.getElementById('search-input').value.trim();
+  try {
+    const res = await apiFetch(`/api/surveys${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+    const data = await res.json();
+    currentSurveys = data.surveys;
+    renderList(currentSurveys);
+  } catch (err) { /* handled in apiFetch */ }
+}
+
+function empTotal(s) {
+  return [s.empOffice, s.empTech, s.empProduction, s.empOther].reduce((a, b) => a + (Number(b) || 0), 0);
+}
+
+function renderList(surveys) {
+  const tbody = document.getElementById('survey-tbody');
+  const empty = document.getElementById('list-empty');
+  if (!surveys.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = surveys.map((s) => `
+    <tr>
+      <td class="name-cell" data-open="${s.id}">${escapeHtml(s.companyName)}</td>
+      <td>${escapeHtml(fmt(s.ceoName))}</td>
+      <td>${empTotal(s)}</td>
+      <td>${fmt(s.revenueMillion)}</td>
+      <td>${s.attachmentCount || 0}</td>
+      <td>${escapeHtml((s.createdAt || '').slice(0, 16))}</td>
+      <td class="action-cell">
+        <button type="button" class="btn-secondary" data-open="${s.id}">상세</button>
+        <button type="button" class="btn-danger" data-delete="${s.id}">삭제</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('search-input').addEventListener('input', () => {
+  clearTimeout(window._searchTimer);
+  window._searchTimer = setTimeout(loadList, 250);
+});
+
+document.getElementById('survey-tbody').addEventListener('click', async (e) => {
+  const openBtn = e.target.closest('[data-open]');
+  if (openBtn) { openDetail(openBtn.dataset.open); return; }
+  const delBtn = e.target.closest('[data-delete]');
+  if (delBtn) {
+    if (!confirm('이 기업조사표를 삭제하시겠습니까? 첨부파일도 함께 삭제됩니다.')) return;
+    try {
+      await apiFetch(`/api/surveys/${delBtn.dataset.delete}`, { method: 'DELETE' });
+      loadStats();
+      loadList();
+    } catch (err) { alert(err.message || '삭제 중 오류가 발생했습니다.'); }
+  }
+});
+
+async function downloadWithAuth(url, fallbackName) {
+  try {
+    const res = await apiFetch(url);
+    if (!res.ok) { alert('다운로드에 실패했습니다.'); return; }
+    const blob = await res.blob();
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename="([^"]+)"/);
+    const filename = match ? match[1] : fallbackName;
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objUrl; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(objUrl);
+  } catch (err) { alert(err.message || '다운로드 중 오류가 발생했습니다.'); }
+}
+
+document.getElementById('export-excel-btn').addEventListener('click', () => {
+  downloadWithAuth('/api/surveys/export/excel', 'company-surveys.xlsx');
+});
+
+let currentDetailId = null;
+
+function kvBlock(pairs) {
+  return `<div class="kv-grid">${pairs.map(([k, v]) => `<div><div class="k">${escapeHtml(k)}</div><div class="v">${escapeHtml(fmt(v))}</div></div>`).join('')}</div>`;
+}
+
+function repBlock(columns, rows) {
+  if (!rows || !rows.length) return '<div class="rep-list"><div style="color:#a0aec0;">입력된 항목이 없습니다.</div></div>';
+  return `<div class="rep-list">${rows.map((r, i) => `<div>${i + 1}. ${columns.map(([label, key]) => `${escapeHtml(label)}: ${escapeHtml(fmt(r[key]))}`).join(' | ')}</div>`).join('')}</div>`;
+}
+
+async function openDetail(id) {
+  try {
+    const res = await apiFetch(`/api/surveys/${id}`);
+    const s = await res.json();
+    currentDetailId = id;
+    renderDetail(s);
+    listPanel.style.display = 'none';
+    detailPanel.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) { alert(err.message || '조회 중 오류가 발생했습니다.'); }
+}
+
+document.getElementById('back-to-list').addEventListener('click', () => {
+  detailPanel.style.display = 'none';
+  listPanel.style.display = 'block';
+});
+
+document.getElementById('detail-pdf-btn').addEventListener('click', () => {
+  if (!currentDetailId) return;
+  downloadWithAuth(`/api/surveys/${currentDetailId}/export/pdf`, `survey-${currentDetailId}.pdf`);
+});
+
+document.getElementById('detail-delete-btn').addEventListener('click', async () => {
+  if (!currentDetailId) return;
+  if (!confirm('이 기업조사표를 삭제하시겠습니까? 첨부파일도 함께 삭제됩니다.')) return;
+  try {
+    await apiFetch(`/api/surveys/${currentDetailId}`, { method: 'DELETE' });
+    detailPanel.style.display = 'none';
+    listPanel.style.display = 'block';
+    loadStats();
+    loadList();
+  } catch (err) { alert(err.message || '삭제 중 오류가 발생했습니다.'); }
+});
+
+async function renderDetail(s) {
+  const owner = s.ownerInfo || {};
+  const mc = s.mgmtCapability || {};
+  const rnd = s.rndOrg || {};
+  const tsm = s.techStaffMgmt || {};
+  const ip = s.ipRights || {};
+  const tdr = s.techDevResults || {};
+  const prod = s.production || {};
+  const ratio = prod.ratio || {};
+  const inv = s.investment || {};
+  const mkt = s.marketingCapability || {};
+  const tc = s.techCompetitiveness || {};
+  const ms = s.marketStatus || {};
+  const pa = s.productAdvantage || {};
+
+  document.getElementById('detail-content').innerHTML = `
+    <h2 style="margin-bottom:4px;">${escapeHtml(s.companyName)}</h2>
+    <p style="color:#a0aec0; font-size:0.8rem; margin-bottom:18px;">제출일시: ${escapeHtml(s.createdAt)}</p>
+
+    <div class="detail-section"><h3>작성정보 / 기업개요</h3>
+      ${kvBlock([
+        ['조사방식', s.surveyMethod], ['조사방법', s.surveyChannel], ['작성일', s.surveyDate],
+        ['작성자 부서/직위', s.contactDeptPosition], ['작성자 연락처', s.contactPhone],
+        ['사업자등록번호', s.bizRegNo], ['대표자명', s.ceoName],
+        ['사무직', s.empOffice], ['기술직', s.empTech], ['생산직', s.empProduction], ['기타', s.empOther],
+        ['마케팅 전담부서', s.marketingDeptYn], ['마케팅 전담인력수', s.marketingHeadcount],
+        ['매출액(백만원)', s.revenueMillion], ['매출비중(%)', s.revenueRatio],
+        ['주요제품/상품/서비스', s.mainProduct], ['주요기술', s.mainTech],
+      ])}
+      <div style="margin-top:8px; font-size:0.85rem;"><strong>기술개요 및 종합의견</strong><br>${escapeHtml(fmt(s.techOverviewOpinion))}</div>
+    </div>
+
+    <div class="detail-section"><h3>주요 사업현황</h3>
+      ${repBlock([['제품/서비스', 'product'], ['매출액', 'revenue'], ['매출비중(%)', 'ratio'], ['주요기술', 'tech']], s.businessStatus)}
+      <div style="margin-top:6px; font-size:0.82rem; color:#4a5568;">확인 자료: ${escapeHtml((s.docsChecked || []).join(', ') || '-')}</div>
+    </div>
+
+    <div class="detail-section"><h3>1. 경영주 및 경영진 현황</h3>
+      ${kvBlock([['성명', owner.name], ['생년월일', owner.birthDate], ['경영형태', owner.mgmtType], ['졸업년도', owner.gradYear], ['최종학력', owner.eduLevel], ['전공', owner.major], ['보유자격증', owner.cert], ['취득년도', owner.certYear]])}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">경영주 주요경력</div>
+      ${repBlock([['기간', 'period'], ['근무처', 'company'], ['업종', 'industry'], ['담당업무', 'duty'], ['최종직위', 'position']], owner.careers)}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">경영진</div>
+      ${repBlock([['성명', 'name'], ['직위', 'position'], ['담당업무', 'duty'], ['학력', 'eduLevel'], ['동업종경력', 'careerYears']], s.executives)}
+      <div style="margin-top:8px; font-size:0.85rem;">
+        ${[['경영기획', mc.planningNote], ['정보수집능력', mc.infoCollect], ['기술전략', mc.techStrategy], ['사업화실적', mc.commercializeResult], ['기업가정신', mc.entrepreneurship]]
+          .filter(([, v]) => v).map(([k, v]) => `<div><strong>${escapeHtml(k)}:</strong> ${escapeHtml(v)}</div>`).join('') || '<span style="color:#a0aec0;">추가 입력 없음</span>'}
+      </div>
+    </div>
+
+    <div class="detail-section"><h3>2. 기술개발 환경 및 실적</h3>
+      ${kvBlock([['연구개발조직', (rnd.types || []).join(', ')], ['인정일', rnd.recognizedDate]])}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">기술인력</div>
+      ${repBlock([['성명', 'name'], ['소속부서', 'dept'], ['담당업무', 'duty'], ['학력', 'eduLevel'], ['동업종경력', 'careerYears']], s.techStaff)}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">지식재산권</div>
+      ${repBlock([['구분', 'type'], ['출원(등록)번호', 'appRegNo'], ['명칭', 'name'], ['권리자', 'holder']], ip.rows)}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">인증 / 수상</div>
+      ${repBlock([['인증명', 'name'], ['인증번호', 'no'], ['유효기간', 'validity']], s.certifications)}
+      ${repBlock([['수상명', 'name'], ['수상기관', 'org'], ['수상일자', 'date']], s.awards)}
+      ${kvBlock([['기술개발 실적(건)', tdr.devCount], ['상용화 실적(건)', tdr.commercializeCount], ['제품상용화 실적(건)', tdr.productCommercializeCount], ['수상 실적(건)', tdr.awardCount], ['인증 실적(건)', tdr.certCount]])}
+      <div style="font-size:0.85rem;">${escapeHtml(fmt(tdr.devDesc))}</div>
+    </div>
+
+    <div class="detail-section"><h3>3. 생산 및 사업 현황</h3>
+      ${kvBlock([['자체생산(%)', ratio.self], ['외주생산(%)', ratio.outsource], ['주문생산(%)', ratio.order], ['시장생산(%)', ratio.market]])}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">생산시설</div>
+      ${repBlock([['시설명', 'name'], ['규격', 'spec'], ['주요용도', 'usage']], prod.facilities)}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">외주업체</div>
+      ${repBlock([['업체명', 'name'], ['비고', 'note']], (prod.outsource || {}).vendors)}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">투자계획</div>
+      ${repBlock([['조달방법', 'method'], ['기조달액', 'funded'], ['추가조달예정액', 'planned']], inv.rows)}
+      <div style="font-size:0.82rem; color:#718096; margin:6px 0 2px;">판매처</div>
+      ${repBlock([['판매처명', 'name'], ['사업자등록번호', 'bizRegNo'], ['비중(%)', 'ratio'], ['거래기간', 'period']], s.clients)}
+      <div style="font-size:0.85rem; margin-top:6px;">마케팅 역량: ${escapeHtml(fmt(mkt.note))}</div>
+    </div>
+
+    <div class="detail-section"><h3>4. 기술경쟁력</h3>
+      ${kvBlock([['핵심기술명', tc.coreTechName], ['혁신성', tc.innovation], ['기술수명주기', tc.lifecycle], ['차별성', tc.differentiation]])}
+      ${kvBlock([['목표시장', ms.targetMarket], ['경쟁업체', ms.competitors], ['시장집중도', ms.concentration], ['관련 정부정책', ms.govPolicy]])}
+      ${kvBlock([['자체상표비중(%)', pa.ownBrandRatio], ['보유브랜드', pa.brand], ['영업망보유', pa.salesNetwork], ['원가경쟁력', pa.costCompetitiveness]])}
+    </div>
+
+    <div class="detail-section"><h3>첨부파일</h3>
+      <div id="attach-product" class="img-grid"></div>
+      <div id="attach-rnd" style="margin-top:8px;"></div>
+    </div>
+  `;
+
+  const productBox = document.getElementById('attach-product');
+  const rndBox = document.getElementById('attach-rnd');
+  const attachments = s.attachments || [];
+  const productImgs = attachments.filter((a) => a.category === 'product_image');
+  const rndFiles = attachments.filter((a) => a.category === 'rnd_result');
+
+  if (!productImgs.length) productBox.innerHTML = '<span style="color:#a0aec0; font-size:0.85rem;">등록된 제품 이미지가 없습니다.</span>';
+  for (const att of productImgs) {
+    try {
+      const res = await apiFetch(`/api/surveys/attachments/${att.id}/file`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const img = document.createElement('img');
+      img.src = url; img.title = att.originalName;
+      productBox.appendChild(img);
+    } catch (e) { /* skip */ }
+  }
+
+  if (!rndFiles.length) {
+    rndBox.innerHTML = '<span style="color:#a0aec0; font-size:0.85rem;">등록된 R&D 실적 자료가 없습니다.</span>';
+  } else {
+    rndBox.innerHTML = rndFiles.map((a) => `<span class="file-chip" data-file="${a.id}">${escapeHtml(a.originalName)}</span>`).join('');
+    rndBox.querySelectorAll('[data-file]').forEach((chip) => {
+      chip.style.cursor = 'pointer';
+      chip.addEventListener('click', async () => {
+        try {
+          const res = await apiFetch(`/api/surveys/attachments/${chip.dataset.file}/file`);
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
+        } catch (e) { alert('파일을 여는 중 오류가 발생했습니다.'); }
+      });
+    });
+  }
+}
+
+renderAuthState();
+</script>
+</body>
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기업조사표 입력</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    min-height: 100vh;
+    padding: 32px 16px 100px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 6px; }
+  .subtitle { color: #718096; font-size: 0.88rem; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 16px; padding: 24px 26px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 20px; }
+  .card h2 { font-size: 1.05rem; margin-bottom: 4px; color: #2b6cb0; border-bottom: 2px solid #bee3f8; padding-bottom: 8px; }
+  .card h3 { font-size: 0.92rem; margin: 16px 0 8px; color: #2d3748; }
+  .card .hint { font-size: 0.78rem; color: #a0aec0; margin-bottom: 10px; }
+  label { display: block; font-size: 0.82rem; color: #4a5568; margin-bottom: 5px; font-weight: 600; }
+  input, textarea, select {
+    width: 100%; padding: 8px 11px; border: 1px solid #e2e8f0; border-radius: 8px;
+    font-size: 0.88rem; font-family: inherit; background: #fff;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #4299e1; }
+  textarea { resize: vertical; min-height: 56px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .form-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .field { margin-bottom: 0; }
+  .radio-group { display: flex; gap: 14px; align-items: center; padding-top: 6px; }
+  .radio-group label { display: flex; align-items: center; gap: 5px; font-weight: 500; margin-bottom: 0; }
+  .radio-group input { width: auto; }
+  .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .checkbox-grid label { display: flex; align-items: center; gap: 6px; font-weight: 500; margin-bottom: 0; font-size: 0.85rem; }
+  .checkbox-grid input { width: auto; }
+
+  .rep-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 0.82rem; }
+  .rep-table th { text-align: left; font-size: 0.76rem; color: #718096; padding: 4px 6px; font-weight: 600; }
+  .rep-table td { padding: 4px 6px; vertical-align: top; }
+  .rep-table td input, .rep-table td select { padding: 6px 8px; font-size: 0.82rem; }
+  .rep-table .rm-col { width: 46px; }
+  .btn-add {
+    padding: 7px 14px; border: 1px dashed #90cdf4; border-radius: 8px; background: #ebf8ff;
+    color: #2b6cb0; font-size: 0.8rem; font-weight: 600; cursor: pointer; margin-bottom: 16px;
+  }
+  .btn-add:hover { background: #bee3f8; }
+  .btn-rm { padding: 5px 9px; border: 1px solid #fc8181; border-radius: 6px; background: #fff; color: #e53e3e; font-size: 0.75rem; cursor: pointer; }
+  .btn-rm:hover { background: #fff5f5; }
+  .btn-primary { padding: 13px 20px; border: none; border-radius: 10px; background: #4299e1; color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; }
+  .btn-primary:hover { background: #3182ce; }
+  .btn-primary:disabled { background: #a0aec0; cursor: not-allowed; }
+  .msg { margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 0.88rem; display: none; }
+  .msg.error { display: block; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+  .msg.success { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+  .file-input-area { border: 1px dashed #cbd5e0; border-radius: 10px; padding: 14px; }
+  .file-list { margin-top: 8px; font-size: 0.8rem; color: #4a5568; }
+  .file-list div { padding: 2px 0; }
+  .hp-field { position: absolute; left: -9999px; top: -9999px; }
+  .section-divider { height: 1px; background: #edf2f7; margin: 18px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>기업조사표 입력</h1>
+  <p class="subtitle">아래 항목을 입력하고 맨 아래 저장 버튼을 누르면 제출됩니다. * 표시는 필수 항목입니다.</p>
+
+  <form id="survey-form">
+    <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off">
+
+    <div class="card">
+      <h2>작성정보</h2>
+      <div class="form-grid">
+        <div class="field"><label>조사방식</label>
+          <select id="surveyMethod"><option value="">선택</option><option value="외주">외주</option><option value="자체">자체</option></select>
+        </div>
+        <div class="field"><label>조사방법</label>
+          <select id="surveyChannel"><option value="">선택</option><option value="현지">현지</option><option value="유선">유선</option></select>
+        </div>
+        <div class="field"><label>작성일</label><input type="date" id="surveyDate"></div>
+        <div class="field"><label>작성자 부서/직위</label><input type="text" id="contactDeptPosition" placeholder="예: 경영지원팀 대리"></div>
+        <div class="field"><label>작성자 연락처</label><input type="text" id="contactPhone" placeholder="010-0000-0000"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>기업개요</h2>
+      <div class="form-grid">
+        <div class="field"><label>업체명 *</label><input type="text" id="companyName" required placeholder="예: (주)코코그룹"></div>
+        <div class="field"><label>사업자등록번호</label><input type="text" id="bizRegNo" placeholder="000-00-00000"></div>
+        <div class="field"><label>대표자명</label><input type="text" id="ceoName"></div>
+      </div>
+      <h3>종업원수</h3>
+      <div class="form-grid">
+        <div class="field"><label>사무직</label><input type="number" id="empOffice" min="0"></div>
+        <div class="field"><label>기술직</label><input type="number" id="empTech" min="0"></div>
+        <div class="field"><label>생산직</label><input type="number" id="empProduction" min="0"></div>
+        <div class="field"><label>기타</label><input type="number" id="empOther" min="0"></div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>마케팅 전담부서 운영</label>
+          <div class="radio-group">
+            <label><input type="radio" name="marketingDeptYn" value="Y"> Y</label>
+            <label><input type="radio" name="marketingDeptYn" value="N"> N</label>
+          </div>
+        </div>
+        <div class="field"><label>마케팅 전담인력수</label><input type="number" id="marketingHeadcount" min="0"></div>
+        <div class="field"><label>매출액(백만원)</label><input type="number" id="revenueMillion"></div>
+        <div class="field"><label>매출비중(%)</label><input type="number" id="revenueRatio"></div>
+      </div>
+      <div class="form-grid cols-2">
+        <div class="field"><label>주요제품/상품/서비스</label><input type="text" id="mainProduct"></div>
+        <div class="field"><label>주요기술</label><input type="text" id="mainTech"></div>
+      </div>
+      <h3>기술개요 및 종합의견</h3>
+      <textarea id="techOverviewOpinion" placeholder="기업의 기술 및 사업 전반에 대한 요약을 자유롭게 작성해주세요."></textarea>
+
+      <h3>주요 사업현황</h3>
+      <table class="rep-table" id="rep-businessStatus">
+        <thead><tr><th>제품/상품/서비스</th><th>매출액(백만원)</th><th>매출비중(%)</th><th>주요기술</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="businessStatus">+ 사업현황 추가</button>
+
+      <h3>확인 자료 (해당 자료를 보유/확인한 경우 체크)</h3>
+      <div class="checkbox-grid" id="docsChecked-group">
+        <label><input type="checkbox" value="4대보험가입자명부"> 4대보험가입자명부</label>
+        <label><input type="checkbox" value="사업자등록증"> 사업자등록증</label>
+        <label><input type="checkbox" value="법인등기부등본"> 법인등기부등본</label>
+        <label><input type="checkbox" value="재무제표"> 재무제표</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>1. 경영주 및 경영진 현황</h2>
+      <h3>경영주</h3>
+      <div class="form-grid">
+        <div class="field"><label>성명</label><input type="text" id="owner-name"></div>
+        <div class="field"><label>생년월일</label><input type="date" id="owner-birthDate"></div>
+        <div class="field"><label>경영형태</label>
+          <select id="owner-mgmtType"><option value="">선택</option><option>창업</option><option>2세승계</option><option>인수</option><option>전문경영인</option><option>기타</option></select>
+        </div>
+        <div class="field"><label>졸업년도</label><input type="text" id="owner-gradYear" placeholder="예: 2005"></div>
+        <div class="field"><label>최종학력</label><input type="text" id="owner-eduLevel" placeholder="예: 학사"></div>
+        <div class="field"><label>전공</label><input type="text" id="owner-major"></div>
+        <div class="field"><label>보유자격증</label><input type="text" id="owner-cert"></div>
+        <div class="field"><label>취득년도</label><input type="text" id="owner-certYear"></div>
+      </div>
+      <h3>경영주 주요경력</h3>
+      <table class="rep-table" id="rep-ownerCareers">
+        <thead><tr><th>기간</th><th>근무처</th><th>업종</th><th>담당업무</th><th>최종직위</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="ownerCareers">+ 경력 추가</button>
+
+      <h3>경영진 (최대 5명 권장)</h3>
+      <table class="rep-table" id="rep-executives">
+        <thead><tr><th>성명</th><th>직위</th><th>담당업무</th><th>대표자와관계</th><th>최종학력</th><th>전공</th><th>동업종경력(년)</th><th>인정자격증</th><th>주요경력</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="executives">+ 경영진 추가</button>
+
+      <h3>기술경영 관리능력 / 신뢰성</h3>
+      <div class="form-grid cols-2">
+        <div class="field"><label>경영기획 (목표시장/수요분석, 영업전략, 경영계획 등)</label><textarea id="mc-planningNote"></textarea></div>
+        <div class="field"><label>정보수집능력</label><textarea id="mc-infoCollect"></textarea></div>
+        <div class="field"><label>기술전략</label><textarea id="mc-techStrategy"></textarea></div>
+        <div class="field"><label>사업화실적</label><textarea id="mc-commercializeResult"></textarea></div>
+        <div class="field"><label>기업가정신</label><textarea id="mc-entrepreneurship"></textarea></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. 기술개발 환경 및 실적</h2>
+      <h3>연구개발조직</h3>
+      <div class="checkbox-grid" id="rndOrg-group">
+        <label><input type="checkbox" value="기업부설연구소"> 기업부설연구소</label>
+        <label><input type="checkbox" value="기업부설창작연구소"> 기업부설창작연구소</label>
+        <label><input type="checkbox" value="디자인전문회사"> 디자인전문회사</label>
+        <label><input type="checkbox" value="연구개발업"> 연구개발업</label>
+        <label><input type="checkbox" value="연구개발전담부서"> 연구개발전담부서</label>
+        <label><input type="checkbox" value="창작전담부서"> 창작전담부서</label>
+        <label><input type="checkbox" value="자체연구개발부서"> 자체연구개발부서</label>
+        <label><input type="checkbox" value="연구개발인력만 확보"> 연구개발인력만 확보</label>
+        <label><input type="checkbox" value="생산관리인력만 확보"> 생산관리인력만 확보</label>
+        <label><input type="checkbox" value="해당사항 없음"> 해당사항 없음</label>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>인정일</label><input type="date" id="rndOrg-recognizedDate"></div>
+      </div>
+
+      <h3>기술인력 정보 (최대 35명)</h3>
+      <table class="rep-table" id="rep-techStaff">
+        <thead><tr><th>성명</th><th>소속부서</th><th>담당업무</th><th>최종학력</th><th>전공</th><th>자격증명</th><th>자격증취득일</th><th>동업종경력(년)</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="techStaff">+ 기술인력 추가</button>
+
+      <h3>기술인력 관리능력</h3>
+      <div class="form-grid">
+        <div class="field"><label>핵심인력 퇴직(1년 이내)</label><input type="text" id="tsm-coreStaffLeft"></div>
+        <div class="field"><label>신규고용인력 수</label><input type="number" id="tsm-newHireCount" min="0"></div>
+      </div>
+      <div class="form-grid cols-2">
+        <div class="field"><label>인센티브 제도 (직무발명/우리사주/스톡옵션 등)</label><textarea id="tsm-incentiveNote"></textarea></div>
+        <div class="field"><label>복지·교육훈련 (교육비/연수/학자금/세미나 등)</label><textarea id="tsm-welfareNote"></textarea></div>
+      </div>
+
+      <h3>지식재산권 보유현황</h3>
+      <table class="rep-table" id="rep-ipRights">
+        <thead><tr><th>구분</th><th>출원(등록)번호</th><th>명칭</th><th>권리자</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="ipRights">+ 지식재산권 추가</button>
+
+      <h3>인증 보유현황</h3>
+      <table class="rep-table" id="rep-certifications">
+        <thead><tr><th>인증명</th><th>인증번호</th><th>유효기간</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="certifications">+ 인증 추가</button>
+
+      <h3>수상 실적</h3>
+      <table class="rep-table" id="rep-awards">
+        <thead><tr><th>수상명</th><th>수상기관</th><th>수상일자</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="awards">+ 수상 추가</button>
+
+      <h3>기술개발 실적</h3>
+      <div class="form-grid">
+        <div class="field"><label>기술개발 실적(건)</label><input type="number" id="tdr-devCount" min="0"></div>
+        <div class="field"><label>상용화 실적(건)</label><input type="number" id="tdr-commercializeCount" min="0"></div>
+        <div class="field"><label>제품 상용화 실적(건)</label><input type="number" id="tdr-productCommercializeCount" min="0"></div>
+        <div class="field"><label>수상 실적(건)</label><input type="number" id="tdr-awardCount" min="0"></div>
+        <div class="field"><label>인증 실적(건)</label><input type="number" id="tdr-certCount" min="0"></div>
+      </div>
+      <div class="field"><label>주요 실적 내용</label><textarea id="tdr-desc" placeholder="기술개발/상용화/수상/인증 관련 주요 실적을 자유롭게 작성해주세요."></textarea></div>
+    </div>
+
+    <div class="card">
+      <h2>3. 생산 및 사업 현황</h2>
+      <h3>생산방식 비율(%)</h3>
+      <div class="form-grid">
+        <div class="field"><label>자체생산</label><input type="number" id="prod-self" min="0" max="100"></div>
+        <div class="field"><label>외주생산</label><input type="number" id="prod-outsource" min="0" max="100"></div>
+        <div class="field"><label>주문생산</label><input type="number" id="prod-order" min="0" max="100"></div>
+        <div class="field"><label>시장생산</label><input type="number" id="prod-market" min="0" max="100"></div>
+      </div>
+      <div class="form-grid cols-2">
+        <div class="field"><label>자체생산 현황 (가동현황, 근무형태, 근속연수, 품질관리 등)</label><textarea id="prod-selfNote"></textarea></div>
+        <div class="field"><label>원부자재 가격 동향</label>
+          <select id="prod-materialTrend"><option value="">선택</option><option>상승</option><option>보합</option><option>하락</option></select>
+        </div>
+      </div>
+      <h3>생산시설</h3>
+      <table class="rep-table" id="rep-facilities">
+        <thead><tr><th>생산시설명</th><th>규격 등</th><th>주요 용도</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="facilities">+ 생산시설 추가</button>
+
+      <h3>외주업체</h3>
+      <div class="form-grid">
+        <div class="field"><label>외주업체 전담 관리부서</label>
+          <div class="radio-group">
+            <label><input type="radio" name="outsourceDeptYn" value="Y"> Y</label>
+            <label><input type="radio" name="outsourceDeptYn" value="N"> N</label>
+          </div>
+        </div>
+        <div class="field"><label>부서명</label><input type="text" id="outsourceDeptName"></div>
+      </div>
+      <table class="rep-table" id="rep-vendors">
+        <thead><tr><th>외주업체명</th><th>비고(거래기간, 관계 등)</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="vendors">+ 외주업체 추가</button>
+
+      <h3>투자계획 및 자본조달</h3>
+      <div class="form-grid">
+        <div class="field"><label>상용화 구분</label>
+          <select id="inv-stage"><option value="">선택</option><option value="상용화 이전">상용화 이전</option><option value="상용화 이후">상용화 이후</option></select>
+        </div>
+      </div>
+      <table class="rep-table" id="rep-investment">
+        <thead><tr><th>조달방법</th><th>기조달액</th><th>추가조달 예정액</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="investment">+ 투자계획 추가</button>
+      <div class="field"><label>중단기 투자계획 근거 (수익성분석/인력수급/기술개발/마케팅/설비투자 등)</label><textarea id="inv-note"></textarea></div>
+
+      <h3>판매처</h3>
+      <table class="rep-table" id="rep-clients">
+        <thead><tr><th>판매처명</th><th>사업자등록번호</th><th>비중(%)</th><th>거래기간</th><th>비고</th><th class="rm-col"></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn-add" data-add-row="clients">+ 판매처 추가</button>
+
+      <h3>마케팅 역량</h3>
+      <div class="field"><label>시장조사/환경분석/마케팅전략/실행가능성/전담부서/전담인력 전문성 등에 대한 설명</label><textarea id="marketing-note"></textarea></div>
+    </div>
+
+    <div class="card">
+      <h2>4. 기술경쟁력</h2>
+      <div class="form-grid">
+        <div class="field"><label>핵심기술명</label><input type="text" id="tc-coreTechName"></div>
+        <div class="field"><label>혁신성</label>
+          <select id="tc-innovation"><option value="">선택</option><option>혁신기술</option><option>주요 개량기술</option><option>보통 개량기술</option></select>
+        </div>
+        <div class="field"><label>기술수명주기</label>
+          <select id="tc-lifecycle"><option value="">선택</option><option>도입기</option><option>성장기 초기</option><option>성장기</option><option>성숙기</option><option>쇠퇴기</option></select>
+        </div>
+        <div class="field"><label>기존·경쟁기술 대비 차별성</label>
+          <select id="tc-differentiation"><option value="">선택</option><option>매우높음</option><option>높음</option><option>보통</option><option>미흡</option><option>매우미흡</option></select>
+        </div>
+      </div>
+      <div class="form-grid cols-2">
+        <div class="field"><label>모방난이도 (개발비, 개발시간, 관련 지식재산권 등)</label><textarea id="tc-imitationNote"></textarea></div>
+        <div class="field"><label>기술완성도 (단계, 양산년월, 보완개발 이력 등)</label><textarea id="tc-completenessNote"></textarea></div>
+      </div>
+
+      <h3>시장현황</h3>
+      <div class="form-grid cols-2">
+        <div class="field"><label>목표시장</label><input type="text" id="ms-targetMarket"></div>
+        <div class="field"><label>경쟁업체</label><input type="text" id="ms-competitors"></div>
+        <div class="field"><label>시장집중도</label><input type="text" id="ms-concentration"></div>
+        <div class="field"><label>관련 정부 정책/제도</label><input type="text" id="ms-govPolicy"></div>
+      </div>
+
+      <h3>제품우위성</h3>
+      <div class="form-grid">
+        <div class="field"><label>총 매출 중 자체상표 비중(%)</label><input type="number" id="pa-ownBrandRatio" min="0" max="100"></div>
+        <div class="field"><label>보유 브랜드</label><input type="text" id="pa-brand"></div>
+        <div class="field"><label>영업망 보유</label>
+          <select id="pa-salesNetwork"><option value="">선택</option><option>매우높음</option><option>높음</option><option>보통</option></select>
+        </div>
+        <div class="field"><label>원가경쟁력</label>
+          <select id="pa-costCompetitiveness"><option value="">선택</option><option>매우높음</option><option>높음</option><option>보통</option></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>첨부파일</h2>
+      <h3>제품 이미지 (최대 5개, jpg/png/webp)</h3>
+      <div class="file-input-area">
+        <input type="file" id="productImages" accept="image/jpeg,image/png,image/webp" multiple>
+        <div class="file-list" id="productImages-list"></div>
+      </div>
+      <div class="section-divider"></div>
+      <h3>R&D 실적 자료 (최대 5개, jpg/png/pdf — 인증서, 특허, 수상내역 등)</h3>
+      <div class="file-input-area">
+        <input type="file" id="rndFiles" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
+        <div class="file-list" id="rndFiles-list"></div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary" id="submit-btn">저장</button>
+    <div id="form-msg" class="msg"></div>
+  </form>
+</div>
+
+<script>
+// ---------- 반복 테이블(Repeater) 공통 로직 ----------
+const REPEATERS = {
+  businessStatus: ['product', 'revenue', 'ratio', 'tech'],
+  ownerCareers: ['period', 'company', 'industry', 'duty', 'position'],
+  executives: ['name', 'position', 'duty', 'relation', 'eduLevel', 'major', 'careerYears', 'cert', 'mainCareer'],
+  techStaff: ['name', 'dept', 'duty', 'eduLevel', 'major', 'cert', 'certDate', 'careerYears'],
+  ipRights: ['type', 'appRegNo', 'name', 'holder'],
+  certifications: ['name', 'no', 'validity'],
+  awards: ['name', 'org', 'date'],
+  facilities: ['name', 'spec', 'usage'],
+  vendors: ['name', 'note'],
+  investment: ['method', 'funded', 'planned'],
+  clients: ['name', 'bizRegNo', 'ratio', 'period', 'note'],
+};
+const IP_TYPE_OPTIONS = ['특허', '실용신안', '디자인등록', '상표권등록', '프로그램등록', '품종보호권', '저작권'];
+
+function makeRowCell(repName, key) {
+  if (repName === 'ipRights' && key === 'type') {
+    const opts = ['<option value="">선택</option>', ...IP_TYPE_OPTIONS.map((o) => `<option>${o}</option>`)].join('');
+    return `<select data-k="${key}">${opts}</select>`;
+  }
+  return `<input type="text" data-k="${key}">`;
+}
+
+function addRepRow(repName) {
+  const cols = REPEATERS[repName];
+  const tbody = document.querySelector(`#rep-${repName} tbody`);
+  const tr = document.createElement('tr');
+  tr.className = 'rep-row';
+  tr.innerHTML = cols.map((k) => `<td>${makeRowCell(repName, k)}</td>`).join('') + '<td><button type="button" class="btn-rm" data-remove>삭제</button></td>';
+  tbody.appendChild(tr);
+}
+
+function collectRep(repName) {
+  const cols = REPEATERS[repName];
+  const rows = document.querySelectorAll(`#rep-${repName} tbody tr`);
+  return Array.from(rows).map((tr) => {
+    const obj = {};
+    cols.forEach((k) => {
+      const el = tr.querySelector(`[data-k="${k}"]`);
+      obj[k] = el ? el.value.trim() : '';
+    });
+    return obj;
+  }).filter((obj) => Object.values(obj).some((v) => v !== ''));
+}
+
+function resetRep(repName) {
+  const tbody = document.querySelector(`#rep-${repName} tbody`);
+  tbody.innerHTML = '';
+  addRepRow(repName);
+}
+
+document.addEventListener('click', (e) => {
+  const addBtn = e.target.closest('[data-add-row]');
+  if (addBtn) { addRepRow(addBtn.dataset.addRow); return; }
+  const rmBtn = e.target.closest('[data-remove]');
+  if (rmBtn) {
+    const tbody = rmBtn.closest('tbody');
+    rmBtn.closest('tr').remove();
+    if (!tbody.querySelector('tr')) {
+      const repName = Object.keys(REPEATERS).find((n) => tbody.closest('table').id === `rep-${n}`);
+      if (repName) addRepRow(repName);
+    }
+  }
+});
+
+Object.keys(REPEATERS).forEach((name) => addRepRow(name));
+
+// ---------- 파일 업로드 미리보기 ----------
+function bindFileList(inputId, listId, max) {
+  const input = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  input.addEventListener('change', () => {
+    const files = Array.from(input.files || []);
+    if (files.length > max) {
+      alert(`최대 ${max}개까지 첨부할 수 있습니다. 앞의 ${max}개만 사용됩니다.`);
+    }
+    const used = files.slice(0, max);
+    const dt = new DataTransfer();
+    used.forEach((f) => dt.items.add(f));
+    input.files = dt.files;
+    list.innerHTML = used.map((f) => `<div>${f.name} (${Math.round(f.size / 1024)}KB)</div>`).join('');
+  });
+}
+bindFileList('productImages', 'productImages-list', 5);
+bindFileList('rndFiles', 'rndFiles-list', 5);
+
+// ---------- 체크박스 그룹 수집 ----------
+function collectCheckedGroup(containerId) {
+  return Array.from(document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)).map((el) => el.value);
+}
+function resetCheckedGroup(containerId) {
+  document.querySelectorAll(`#${containerId} input[type=checkbox]`).forEach((el) => { el.checked = false; });
+}
+function radioValue(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : '';
+}
+function resetRadio(name) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach((el) => { el.checked = false; });
+}
+
+// ---------- 제출 ----------
+const form = document.getElementById('survey-form');
+const msgEl = document.getElementById('form-msg');
+const submitBtn = document.getElementById('submit-btn');
+
+function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+function showMsg(text, type) { msgEl.textContent = text; msgEl.className = 'msg ' + type; }
+function clearMsg() { msgEl.textContent = ''; msgEl.className = 'msg'; }
+
+function resetForm() {
+  form.reset();
+  Object.keys(REPEATERS).forEach((name) => resetRep(name));
+  document.getElementById('productImages-list').innerHTML = '';
+  document.getElementById('rndFiles-list').innerHTML = '';
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  clearMsg();
+
+  if (!val('companyName')) {
+    showMsg('업체명을 입력해주세요.', 'error');
+    document.getElementById('companyName').focus();
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('website', document.querySelector('input[name=website]').value);
+
+  fd.append('surveyMethod', val('surveyMethod'));
+  fd.append('surveyChannel', val('surveyChannel'));
+  fd.append('surveyDate', val('surveyDate'));
+  fd.append('contactDeptPosition', val('contactDeptPosition'));
+  fd.append('contactPhone', val('contactPhone'));
+
+  fd.append('companyName', val('companyName'));
+  fd.append('bizRegNo', val('bizRegNo'));
+  fd.append('ceoName', val('ceoName'));
+  fd.append('empOffice', val('empOffice'));
+  fd.append('empTech', val('empTech'));
+  fd.append('empProduction', val('empProduction'));
+  fd.append('empOther', val('empOther'));
+  fd.append('marketingDeptYn', radioValue('marketingDeptYn'));
+  fd.append('marketingHeadcount', val('marketingHeadcount'));
+  fd.append('mainProduct', val('mainProduct'));
+  fd.append('revenueMillion', val('revenueMillion'));
+  fd.append('revenueRatio', val('revenueRatio'));
+  fd.append('mainTech', val('mainTech'));
+  fd.append('techOverviewOpinion', val('techOverviewOpinion'));
+  fd.append('docsChecked', JSON.stringify(collectCheckedGroup('docsChecked-group')));
+  fd.append('businessStatus', JSON.stringify(collectRep('businessStatus')));
+
+  fd.append('ownerInfo', JSON.stringify({
+    name: val('owner-name'), birthDate: val('owner-birthDate'), mgmtType: val('owner-mgmtType'),
+    gradYear: val('owner-gradYear'), eduLevel: val('owner-eduLevel'), major: val('owner-major'),
+    cert: val('owner-cert'), certYear: val('owner-certYear'), careers: collectRep('ownerCareers'),
+  }));
+  fd.append('executives', JSON.stringify(collectRep('executives')));
+  fd.append('mgmtCapability', JSON.stringify({
+    planningNote: val('mc-planningNote'), infoCollect: val('mc-infoCollect'), techStrategy: val('mc-techStrategy'),
+    commercializeResult: val('mc-commercializeResult'), entrepreneurship: val('mc-entrepreneurship'),
+  }));
+
+  fd.append('rndOrg', JSON.stringify({ types: collectCheckedGroup('rndOrg-group'), recognizedDate: val('rndOrg-recognizedDate') }));
+  fd.append('techStaff', JSON.stringify(collectRep('techStaff')));
+  fd.append('techStaffMgmt', JSON.stringify({
+    coreStaffLeft: val('tsm-coreStaffLeft'), newHireCount: val('tsm-newHireCount'),
+    incentiveNote: val('tsm-incentiveNote'), welfareNote: val('tsm-welfareNote'),
+  }));
+  fd.append('ipRights', JSON.stringify({ rows: collectRep('ipRights') }));
+  fd.append('certifications', JSON.stringify(collectRep('certifications')));
+  fd.append('awards', JSON.stringify(collectRep('awards')));
+  fd.append('techDevResults', JSON.stringify({
+    devCount: val('tdr-devCount'), commercializeCount: val('tdr-commercializeCount'),
+    productCommercializeCount: val('tdr-productCommercializeCount'), awardCount: val('tdr-awardCount'),
+    certCount: val('tdr-certCount'), devDesc: val('tdr-desc'),
+  }));
+
+  fd.append('production', JSON.stringify({
+    ratio: { self: val('prod-self'), outsource: val('prod-outsource'), order: val('prod-order'), market: val('prod-market') },
+    selfProd: { note: val('prod-selfNote'), materialTrend: val('prod-materialTrend') },
+    facilities: collectRep('facilities'),
+    outsource: { deptYn: radioValue('outsourceDeptYn'), deptName: val('outsourceDeptName'), vendors: collectRep('vendors') },
+  }));
+  fd.append('investment', JSON.stringify({
+    rows: collectRep('investment'), commercializationStage: val('inv-stage'), details: { note: val('inv-note') },
+  }));
+  fd.append('clients', JSON.stringify(collectRep('clients')));
+  fd.append('marketingCapability', JSON.stringify({ note: val('marketing-note') }));
+
+  fd.append('techCompetitiveness', JSON.stringify({
+    coreTechName: val('tc-coreTechName'), innovation: val('tc-innovation'), lifecycle: val('tc-lifecycle'),
+    differentiation: val('tc-differentiation'),
+    imitationDifficulty: { note: val('tc-imitationNote') },
+    completeness: { note: val('tc-completenessNote') },
+  }));
+  fd.append('marketStatus', JSON.stringify({
+    targetMarket: val('ms-targetMarket'), competitors: val('ms-competitors'),
+    concentration: val('ms-concentration'), govPolicy: val('ms-govPolicy'),
+  }));
+  fd.append('productAdvantage', JSON.stringify({
+    ownBrandRatio: val('pa-ownBrandRatio'), brand: val('pa-brand'),
+    salesNetwork: val('pa-salesNetwork'), costCompetitiveness: val('pa-costCompetitiveness'),
+  }));
+
+  const productImages = document.getElementById('productImages').files;
+  Array.from(productImages).forEach((f) => fd.append('productImages', f));
+  const rndFiles = document.getElementById('rndFiles').files;
+  Array.from(rndFiles).forEach((f) => fd.append('rndFiles', f));
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = '저장 중...';
+  try {
+    const res = await fetch('/api/surveys', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) {
+      showMsg(data.error || '저장 중 오류가 발생했습니다.', 'error');
+      return;
+    }
+    showMsg(`"${data.companyName}" 정보가 저장되었습니다. 감사합니다.`, 'success');
+    resetForm();
+    resetRadio('marketingDeptYn');
+    resetRadio('outsourceDeptYn');
+    resetCheckedGroup('docsChecked-group');
+    resetCheckedGroup('rndOrg-group');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (err) {
+    showMsg('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', 'error');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = '저장';
+  }
+});
+</script>
+</body>
+</html>
