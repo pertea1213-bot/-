@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>코코그룹 | Coco Group</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  header { padding: 24px 0; }
+  .topnav { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .topnav .logo { font-weight: 700; font-size: 1.1rem; color: #2d3748; text-decoration: none; }
+  .topnav .menu { display: flex; gap: 20px; }
+  .topnav .menu a { color: #4a5568; text-decoration: none; font-size: 0.9rem; }
+  .topnav .menu a:hover { text-decoration: underline; }
+
+  .hero {
+    text-align: center;
+    padding: 64px 0 56px;
+  }
+  .hero .eyebrow {
+    display: inline-block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #4299e1;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+  }
+  .hero h1 {
+    font-size: 2.1rem;
+    line-height: 1.4;
+    color: #1a202c;
+    margin-bottom: 16px;
+  }
+  .hero h1 span { color: #4299e1; }
+  .hero p {
+    font-size: 1rem;
+    color: #718096;
+    margin-bottom: 32px;
+  }
+  .btn-primary {
+    display: inline-block;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 8px;
+    background: #4299e1;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .btn-primary:hover { background: #3182ce; }
+
+  section { margin-bottom: 56px; }
+  section h2 {
+    font-size: 1.4rem;
+    margin-bottom: 24px;
+    color: #2d3748;
+    text-align: center;
+  }
+
+  .about-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: #4a5568;
+  }
+
+  .services {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .service-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  }
+  .service-card .icon { font-size: 1.6rem; margin-bottom: 12px; }
+  .service-card h3 { font-size: 1.02rem; margin-bottom: 8px; color: #2d3748; }
+  .service-card p { font-size: 0.86rem; color: #718096; line-height: 1.6; }
+
+  .contact-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  .contact-item .label { font-size: 0.78rem; color: #a0aec0; margin-bottom: 4px; }
+  .contact-item .value { font-size: 0.95rem; color: #2d3748; font-weight: 600; }
+
+  footer {
+    text-align: center;
+    padding: 24px 0 40px;
+    color: #a0aec0;
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="topnav">
+      <a href="/company.html" class="logo">코코그룹</a>
+      <div class="menu">
+        <a href="#about">회사소개</a>
+        <a href="#services">사업영역</a>
+        <a href="#contact">문의하기</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">COCO GROUP</div>
+    <h1>고객의 성장을 함께 설계하는<br><span>전략 컨설팅 파트너</span></h1>
+    <p>코코그룹은 전략, 조직, 재무 전 영역에서 실행 가능한 컨설팅을 제공합니다.</p>
+    <a href="#contact" class="btn-primary">문의하기</a>
+  </section>
+
+  <section id="about">
+    <h2>회사소개</h2>
+    <div class="about-card">
+      코코그룹은 고객사의 현안을 함께 진단하고, 실행 가능한 전략을 설계하는 컨설팅 그룹입니다.
+      단기 처방이 아닌 지속 가능한 변화를 목표로, 프로젝트 시작부터 실행·정착까지 함께합니다.
+      <br><br>
+      <em>※ 회사 연혁, 대표 실적 등 상세 내용은 추후 업데이트됩니다.</em>
+    </div>
+  </section>
+
+  <section id="services">
+    <h2>사업영역</h2>
+    <div class="services">
+      <div class="service-card">
+        <div class="icon">🧭</div>
+        <h3>전략 컨설팅</h3>
+        <p>사업 전략 수립, 신규 시장 진입, 성장 전략 설계를 지원합니다.</p>
+      </div>
+      <div class="service-card">
+        <div class="icon">🏢</div>
+        <h3>조직·인사 컨설팅</h3>
+        <p>조직 설계, 인사 제도 개편, 조직문화 진단 및 개선을 수행합니다.</p>
+      </div>
+      <div class="service-card">
+        <div class="icon">💰</div>
+        <h3>재무 컨설팅</h3>
+        <p>재무 구조 진단, 투자 검토, 사업 타당성 분석을 지원합니다.</p>
+      </div>
+      <div class="service-card">
+        <div class="icon">💻</div>
+        <h3>디지털 전환</h3>
+        <p>업무 프로세스 디지털화, 데이터 기반 의사결정 체계 구축을 돕습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <h2>문의하기</h2>
+    <div class="contact-card">
+      <div class="contact-item">
+        <div class="label">웹사이트</div>
+        <div class="value">www.cocogroup.co.kr</div>
+      </div>
+      <div class="contact-item">
+        <div class="label">이메일</div>
+        <div class="value">contact@cocogroup.co.kr</div>
+      </div>
+      <div class="contact-item">
+        <div class="label">전화</div>
+        <div class="value">추후 업데이트</div>
+      </div>
+      <div class="contact-item">
+        <div class="label">주소</div>
+        <div class="value">추후 업데이트</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    &copy; 2026 코코그룹(Coco Group). All rights reserved.
+  </footer>
+</div>
+</body>
+</html>
