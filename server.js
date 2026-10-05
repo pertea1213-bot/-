@@ -12,7 +12,7 @@ app.use(express.json());
 app.use('/api/admin', authRouter);
 app.use('/api/pm', pmRouter);
 
-app.use(express.static(path.join(__dirname), { extensions: ['html'], index: 'pm.html' }));
+app.use(express.static(path.join(__dirname), { extensions: ['html'], index: 'index.html' }));
 
 app.use((err, req, res, next) => {
   console.error(err);
