@@ -1,0 +1,17 @@
+{
+  "name": "fde-ontology-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "온톨로지·현장배치형 엔지니어(FDE) 양성교육 플랫폼 — 업무 구조도 · 현장 컨설팅 · 교육 (HR 인력 준비 사례 H-701 / HR-047 수록)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "express": "^4.19.2"
+  }
+}
