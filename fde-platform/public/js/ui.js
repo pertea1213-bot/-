@@ -127,10 +127,14 @@ export function actionBtn(label, fn, opts = {}) {
 
 /** 간단한 SVG 막대(부서별 요구 vs 준비) */
 export function groupBars(groups, key = 'approved') {
-  const max = Math.max(...groups.map((g) => g.required), 1);
-  return h('div', null, groups.map((g) => h('div', { style: 'margin:8px 0' },
-    h('div', { class: 'row sb small' }, h('b', null, g.name), h('span', { class: 'muted' }, `요구 ${g.required} · 준비 ${g[key]} · 부족 ${g.required - g[key]}`)),
-    h('div', { style: `width:${(g.required / max) * 100}%` }, stackBar(g, g.required)))));
+  const tot = (g) => Math.max(g.required, g.input || 0, g[key] || 0);
+  const max = Math.max(...groups.map(tot), 1);
+  return h('div', null, groups.map((g) => {
+    const gap = g.required - g[key];
+    return h('div', { style: 'margin:8px 0' },
+      h('div', { class: 'row sb small' }, h('b', null, g.name), h('span', { class: 'muted' }, `요구 ${g.required} · 준비 ${g[key]} · ${gap >= 0 ? `부족 ${gap}` : `초과 ${-gap}`}`)),
+      h('div', { style: `width:${(tot(g) / max) * 100}%` }, stackBar(g, tot(g))));
+  }));
 }
 
 export const roleName = (meta, role, adapter) => (adapter && adapter.role_labels && adapter.role_labels[role]) || (meta.roles[role] && meta.roles[role].label) || role;

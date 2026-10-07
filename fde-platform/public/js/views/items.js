@@ -7,21 +7,23 @@ export async function render({ S }) {
   let d = await S.load(true);
   const ad = d.adapter; const reqs = d.rule ? d.rule.required_keys : [];
   const keyLabel = (k) => (k === '_START' ? ad.start_label : (ad.requirements.find((r) => r.key === k) || {}).label || k);
-  const f = { bucket: 'all', group: 'all', q: '' };
+  const f = { bucket: 'all', group: 'all', q: '', limit: 200 };
   const listEl = h('div'); const side = h('div');
   const iconOf = (v) => ({ verified: ['✓', 'ok'], unmet: ['△', 'review'], pending: ['…', 'in_progress'], missing: ['?', 'unconfirmed'] }[v] || ['·', 'reserve']);
 
   const redraw = () => {
     clear(listEl);
     const rows = d.items.filter((i) => (f.bucket === 'all' || i.bucket === f.bucket) && (f.group === 'all' || i.group_code === f.group) && (!f.q || i.ref_key.toLowerCase().includes(f.q.toLowerCase())));
+    const shown = rows.slice(0, f.limit);
     listEl.append(table(['대상', ad.group_label, '판정', ...reqs.map(keyLabel), '일자', '사유'],
-      rows.map((i) => ({
+      shown.map((i) => ({
         onclick: () => openItem(i.id),
         cells: [h('b', { class: 'mono' }, i.ref_key), i.group_name, badge(i.bucket),
           ...reqs.map((k) => { if (i.bucket === 'reserve') return h('span', { class: 'muted', title: '착수 전 — 요건 판정 대상이 아님' }, '·'); const v = i.req[k]; const [ic, kind] = iconOf(v.value); return h('span', { title: `${keyLabel(k)}: ${VALUE_NAME[v.value] || v.value}${v.source_ref ? ` (${v.source_ref})` : ''}`, class: `badge ${kind === 'ok' ? 'b-ok' : `b-${kind}`}` }, ic); }),
           i.started_on ? `${ad.start_label} ${i.started_on}` : (i.planned_on ? `예정 ${i.planned_on}` : '—'), h('span', { class: 'tiny muted' }, i.reasons.map(reasonText).join(' · '))],
       }))));
-    listEl.append(h('p', { class: 'tiny muted' }, `${rows.length}건 표시 · ✓ 확인됨 · △ 미충족 · … 진행 중 · ? 근거 없음/불명 — 행을 눌러 근거·이력·실행 작업을 엽니다.`));
+    if (rows.length > shown.length) listEl.append(h('div', { class: 'row', style: 'margin-top:8px' }, h('span', { class: 'small muted' }, `${rows.length}건 중 ${shown.length}건 표시`), h('button', { class: 'btn ghost sm', onclick: () => { f.limit += 400; redraw(); } }, '더 보기'), h('button', { class: 'btn ghost sm', onclick: () => { f.limit = rows.length; redraw(); } }, '모두 보기')));
+    listEl.append(h('p', { class: 'tiny muted' }, `${rows.length}건 · ✓ 확인됨 · △ 미충족 · … 진행 중 · ? 근거 없음/불명 — 행을 눌러 근거·이력·실행 작업을 엽니다.`));
   };
   const reasonText = (r) => ({ 'FOLLOWUP_PENDING': '확인 진행 중', 'START_UNTRACEABLE': '착수 근거 식별번호 없음', 'GATE:open_hold': '열린 보류', 'GATE:group_match': '범주 불일치', 'GATE:duplicate_assignment': '중복 배정', 'GATE:no_rule': '유효 규칙 없음' }[r] || (r.startsWith('MISSING:') ? `근거 없음: ${keyLabel(r.slice(8))}` : r.startsWith('UNMET:') ? `미충족: ${keyLabel(r.slice(6))}` : r));
 
@@ -69,8 +71,8 @@ export async function render({ S }) {
   let dr = null;
   async function refresh(itemId) { S.invalidate(); d = await S.load(true); redraw(); if (itemId) await openItem(itemId); await drawQueues(); }
 
-  const bucketBtns = h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: (e) => { f.bucket = 'all'; mark(e.currentTarget); redraw(); } }, `전체 ${d.items.length}`),
-    BUCKETS.map((b) => h('button', { class: 'btn ghost sm', onclick: (e) => { f.bucket = b; mark(e.currentTarget); redraw(); } }, `${BUCKET_NAME[b]} ${d.counts[b]}`)));
+  const bucketBtns = h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: (e) => { f.bucket = 'all'; f.limit = 200; mark(e.currentTarget); redraw(); } }, `전체 ${d.items.length}`),
+    BUCKETS.map((b) => h('button', { class: 'btn ghost sm', onclick: (e) => { f.bucket = b; f.limit = 200; mark(e.currentTarget); redraw(); } }, `${BUCKET_NAME[b]} ${d.counts[b]}`)));
   const mark = (btn) => { bucketBtns.querySelectorAll('button').forEach((x) => x.classList.add('ghost')); btn.classList.remove('ghost'); };
   const grp = select([['all', `${ad.group_label} 전체`], ...d.groups.map((g) => [g.code, g.name])], 'all'); grp.addEventListener('change', () => { f.group = grp.value; redraw(); });
   const q = input('text', '', { placeholder: '대상 식별키 검색 (예: P-007)', 'aria-label': '검색' }); q.addEventListener('input', () => { f.q = q.value; redraw(); });

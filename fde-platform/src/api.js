@@ -13,7 +13,7 @@ const { HttpError, bad, forbidden, notFound, jparse, isoNow } = require('./util'
 const seed = require('./seed');
 
 const CONTENT_DIR = path.join(__dirname, '..', 'content');
-const CONTENT = ['course', 'concepts', 'template', 'process', 'tech', 'practices', 'quiz', 'extras'];
+const CONTENT = ['course', 'concepts', 'template', 'process', 'tech', 'practices', 'practices_academy', 'practices_apparel', 'practices_bread', 'cases', 'quiz', 'extras'];
 const contentCache = new Map();
 function content(name) {
   if (!CONTENT.includes(name)) throw notFound('콘텐츠가 없습니다.');
@@ -50,7 +50,7 @@ function createApi(db, { clock, isProd = false, demoPassword = null } = {}) {
   api.get('/auth/me', wrap((req) => ({ ...req.actor, role_label: policy.ROLES[req.actor.role].label, role_desc: policy.ROLES[req.actor.role].desc })));
   api.get('/meta', wrap(() => ({
     roles: policy.ROLES, buckets: engine.BUCKET_LABEL,
-    adapters: db.prepare('SELECT id,key,name,industry,task_name,unit,item_label,group_label,start_label,start_owner,requirements,role_labels,trap,regulations FROM adapters ORDER BY id').all()
+    adapters: db.prepare('SELECT id,key,name,industry,task_name,unit,item_label,group_label,start_label,start_owner,requirements,role_labels,request_label,trap,regulations FROM adapters ORDER BY id').all()
       .map((a) => ({ ...a, requirements: jparse(a.requirements, []), role_labels: jparse(a.role_labels, {}) })),
     forms: wt.formDefs(), sync_stages: svc.SYNC_STAGES,
   })));
@@ -207,7 +207,7 @@ function createApi(db, { clock, isProd = false, demoPassword = null } = {}) {
   }));
 
   // ───────────── 서식 · 작업표 · 현장 시험 ─────────────
-  api.get('/engagements/:id/forms', wrap((req) => { const id = E(req); exists(id); return { ...wt.formDefs(), saved: wt.getForms(db, id), examples: content('extras').form_examples || {} }; }));
+  api.get('/engagements/:id/forms', wrap((req) => { const id = E(req); exists(id); return { ...wt.formDefs(), saved: wt.getForms(db, id), examples: wt.formExamples(db, id, content('extras').form_examples) }; }));
   api.put('/engagements/:id/forms/:no', wrap((req) => { const id = E(req); exists(id); return wt.saveForm(ctx(req), id, N(req.params.no, 'no'), req.body || {}); }));
   api.get('/engagements/:id/forms/:no/history', wrap((req) => { const id = E(req); exists(id); const f = db.prepare('SELECT id FROM forms WHERE engagement_id=? AND form_no=?').get(id, N(req.params.no, 'no')); return f ? db.prepare('SELECT version,fields,status,updated_by,updated_at FROM form_history WHERE form_id=? ORDER BY version DESC').all(f.id).map((r) => ({ ...r, fields: jparse(r.fields, {}) })) : []; }));
   api.get('/engagements/:id/tools/:tool', wrap((req) => { const id = E(req); exists(id); return wt.toolList(db, id, req.params.tool); }));

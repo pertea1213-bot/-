@@ -68,6 +68,39 @@ function getForms(db, engId) {
   return rows.map((r) => ({ form_no: r.form_no, name: FORMS[r.form_no].name, fields: jparse(r.fields, {}), status: r.status, version: r.version, updated_by: r.updated_by, updated_at: r.updated_at }));
 }
 
+
+/**
+ * 서식 작성 예. 인사 사례는 원문의 작성 예를 그대로 쓰고, 다른 사례는 그 사례의 실제 수치·원인 후보·조치에서 만든다.
+ * 같은 필수 칸(범위·자료 식별번호·단위·시각·담당·미확정·다음 행동)을 모두 채운다.
+ */
+function formExamples(db, engId, hrExamples) {
+  const eng = engine.loadEngagement(db, engId); const ad = eng.adapter;
+  if (ad.key === 'hr-onboarding') return hrExamples || {};
+  const base = engine.baseline(db, engId); const c = base.counts; const m = base.metrics; const u = ad.unit;
+  const role = (r) => (ad.role_labels && ad.role_labels[r]) || r;
+  const reqSrc = ad.requirements.map((r) => r.source || r.label);
+  const hyps = db.prepare('SELECT * FROM hypotheses WHERE engagement_id=? ORDER BY code').all(engId);
+  const iv = db.prepare(`SELECT * FROM interventions WHERE engagement_id=? AND kind<>'smallest' ORDER BY id LIMIT 1`).get(engId);
+  const ivRoles = iv ? jparse(iv.required_roles, []).map(role).join(' + ') : '';
+  const ivCost = iv ? engine.costOf(jparse(iv.cost, null)) : null;
+  const scope = `${ad.request_label || '요청'} ${eng.request_code} / 과업 ${eng.task_code}`;
+  const parts = m.shortage_parts;
+  const common = (i, owner, next) => ({
+    scope, source_id: [`${ad.start_label} 근거 자료`, reqSrc[0], reqSrc[1] || reqSrc[0], reqSrc[2] || reqSrc[0], reqSrc[0], '접근·사유 기록'][i - 1], unit: u, time: `기준 시점 ${eng.basis_date}`, owner,
+    unconfirmed: `미확인 ${c.unconfirmed}${u} · 검토 ${c.review}${u}의 원인은 미판정(원인 후보별 증거·다른 가능성 확인 필요)`, next_action: next,
+  });
+  const ids = base.identities.map((x) => `${x.lhs.value} = ${x.rhs.map((t) => t.value).join(' + ')}`).join(' ; ');
+  const surplusNote = c.required !== c.input ? ` 요구 ${c.required} ≠ 입력 ${c.input}이므로 부족은 요구 − 승인으로 계산하고 초과분은 따로 둔다.` : '';
+  return {
+    1: { ...common(1, '컨설턴트(문제 정의) · 요구 승인 책임자', '자료 요청서 회수 후 관찰 기록지(서식 2) 작성'), problem_sentence: `요구 ${c.required}${u} 중 ${ad.start_label} ${c.started}${u}, 최초 승인 ${c.approved}${u} — 부족 ${m.shortage}${u}(검토 ${parts.review} + 미확인 ${parts.unconfirmed} + 진행 ${parts.in_progress} + 예비 ${parts.reserve}).${surplusNote} ${ad.trap || ''}`.trim() },
+    2: { ...common(2, '컨설턴트 · 현장 담당자', '담당자 면담과 원본 대조로 진술과 기록을 분리'), observed: `원본으로 확인한 사실: ${ids}. 각 숫자의 자료 식별번호는 대상·근거 화면에서 확인한다.`, heard: '담당자 진술(“완료했다”, “보냈다” 등)은 원본과 대조하기 전까지 별도 칸에 보존한다. 사후 해석과 섞지 않는다.' },
+    3: { ...common(3, '컨설턴트 · FDE(같은 결과 확인)', '개별 대상 키 단위 비교 확인'), unconfirmed: '없음 — 세 식·하위 범주 잔차 0 확인(대상 단위 일치는 별도)', equations: ids, residual: '0 / 0 / 0 — 합계 일치 ≠ 정확: 개별 대상 키와 범주 배정을 따로 확인한다' },
+    4: { ...common(4, '컨설턴트 · 해당 업무 책임자(확인)', '원인 후보 × 대상 매트릭스(○△×) 작성'), hypotheses: hyps.length ? hyps.map((h) => `${h.code} ${h.statement}`).join(' · ') : '(아직 없음 — 원인 후보를 2개 이상 먼저 세운다. 원인을 하나로 뭉뚱그리지 않는다)', disconfirm: hyps.length ? hyps.map((h) => `${h.code} ${h.disconfirm_source}`).join(' · ') : '(원인 후보마다 다른 가능성을 확인할 자료를 정한다)', unexplained: `검토 ${c.review} · 미확인 ${c.unconfirmed} 중 어느 원인 후보가 어느 대상을 설명하는지는 미판정이다. 시각의 선후만으로 인과를 확정하지 않는다.` },
+    5: { ...common(5, '컨설턴트(제안) · 승인 책임자', '결재 완료 후 현장 병행 시험 1주차 시작'), target: iv ? `${iv.title}` : '(조치를 먼저 제안 — 대상·권한·비용·중단 조건·복구 경로가 모두 있어야 제출된다)', authority: ivRoles || '(승인 역할을 지정 — 컨설턴트·FDE는 승인할 수 없다)', cost_assumption: ivCost ? (ivCost.lines.length ? `가상 ${ivCost.amount.toLocaleString('ko-KR')}원 — 교육용 가정이며 실제 지급액·자동 절감액이 아님` : '비용 수치 없음 — 현장에서 산정') : '(비용 가정을 적는다 — 임금·법정 비용이 아닌 가정임을 명시)', stop_condition: iv ? iv.stop_condition || '' : '(중단 조건을 정한다)', recovery_path: iv ? iv.recovery_path || '' : '(복구 경로를 정한다)', approver: '[업무 책임자 서명]' },
+    6: { ...common(6, '컨설턴트 → 다음 담당 책임자', '잔여 건의 담당·기한을 지정하고 보호 지표를 재계산'), unresolved: `검토 ${c.review} · 미확인 ${c.unconfirmed} · 진행 ${c.in_progress} · 예비 ${c.reserve} — 각각 담당·기한 지정 필요`, privacy_scope: (ad.regulations || '내부 식별키만 사용, 열람은 역할별, 보존 기간은 현장 정책·법률 검토').split('. ').slice(0, 2).join('. '), assumptions_limits: '비용·조치 후 수량은 가정이며 실측이 아니다. 사후 비교만으로 새 플랫폼의 인과 효과를 단정하지 않는다.', forbidden_actions: '모델 제안값을 곧바로 실행하지 않는다. 승인 없는 상태 변경·무권한 실행 금지.', approval_history: '조치 결재 이력(처리 기록 탭)과 연결' },
+  };
+}
+
 // ───────────────────────── 단순 작업표 CRUD ─────────────────────────
 const TOOLS = {
   statements: { table: 'statements', cols: ['topic', 'statement', 'speaker', 'record_ref', 'match', 'confirm_note'], req: ['topic', 'statement'], defaults: { match: 'check' } },
@@ -341,6 +374,6 @@ function addRuleVersion(ctx, engId, p) {
 }
 
 module.exports = {
-  FORMS, formDefs, saveForm, getForms, TOOLS, toolList, toolSave, toolDelete, hypothesesView, saveHypothesis,
+  FORMS, formDefs, formExamples, saveForm, getForms, TOOLS, toolList, toolSave, toolDelete, hypothesesView, saveHypothesis,
   trialWeeks, updateTrialWeek, closeDay, dailyCloses, compare, report, createAdapter, createEngagement, defaultTrialWeeks, addRuleVersion,
 };

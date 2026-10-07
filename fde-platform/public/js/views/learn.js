@@ -5,7 +5,11 @@ const FLOW = [['q', '현장 질문'], ['e', '근거 자료'], ['c', '계산·판
 const LINK = { 1: ['process', '9단계 · 진술↔기록'], 2: ['process', '자료 사전'], 3: ['analysis', '기간 행 합계'], 4: ['action', '조치·승인'], 5: ['trial', '전후 비교'], 6: ['forms', '서식 6종'], 7: ['analysis', '상태 이동'], 8: ['ontology', '역할별 동선'], 9: ['template', '업종 이식'], 10: ['analysis', '기간 행 합계'], 11: ['items', '근거 타임라인'], 12: ['tech', '변환 대조표'], 13: ['tech', '지표 정의서'], 14: ['action', '시뮬레이션'], 15: ['trial', '일별 마감'], 16: ['trial', '최종 보고서'], 17: ['tech', '요구사항 7칸'], 18: ['process', '품질 5축'], 19: ['tests', '인계·시험'], 20: ['wrap', '루브릭'], 21: ['wrap', '한 장 점검표'] };
 
 export async function renderPractice({ S, go }) {
-  const P = await S.content('practices'); const prog = await api.get('/learn/progress');
+  const PRACT = { 'academy-renewal': 'practices_academy', 'apparel-order': 'practices_apparel', 'bread-labeling': 'practices_bread' };
+  const eng = S.eng(); const pname = (eng && PRACT[eng.adapter_key]) || 'practices';
+  const P = await S.content(pname); const prog = await api.get('/learn/progress');
+  const isHr = pname === 'practices';
+  const adLabel = eng ? ((S.meta.adapters.find((a) => a.key === eng.adapter_key) || {}).request_label || '요청') : '요청';
   const byNo = Object.fromEntries(prog.practices.map((p) => [p.practice_no, p]));
   const R = (await S.content('extras')).rubric;
   let cur = Number((location.hash.match(/no=(\d+)/) || [])[1]) || 1;
@@ -15,7 +19,7 @@ export async function renderPractice({ S, go }) {
     h('div', { class: 'steps', style: 'grid-template-columns:repeat(7,1fr);margin-top:10px' }, P.practices.map((p) => { const st = (byNo[p.no] || {}).status || 'todo'; return h('button', { 'aria-current': p.no === cur ? 'step' : null, title: p.title, style: st === 'done' ? 'border-color:var(--ok)' : '', onclick: () => { cur = p.no; mount(); } }, h('b', null, p.no), ST[st][0]); })));
   function mount() {
     clear(holder);
-    holder.append(h('h1', null, '컨설팅 실습 21'), callout('', '한 과업을 같은 21개 순서로 반복합니다. 각 실습에서 ', h('b', null, FLOW.map((x) => x[1]).join(' → ')), '를 제출하고, 정답 숫자만 맞춘 제출물은 통과시키지 않습니다.'), list(), detail);
+    holder.append(h('h1', null, '컨설팅 실습 21'), !isHr ? note(`현재 사례(${eng.request_code} / ${eng.task_code})의 원고에서 옮긴 실습입니다. 표·도해는 원고를 참고하세요.`) : (eng && eng.adapter_key !== 'hr-onboarding' ? note('이 사례의 실습 원고가 없어 인사 사례(교안) 실습을 보여 줍니다.', 'warn') : null), callout('', '한 과업을 같은 21개 순서로 반복합니다. 각 실습에서 ', h('b', null, FLOW.map((x) => x[1]).join(' → ')), '를 제출하고, 정답 숫자만 맞춘 제출물은 통과시키지 않습니다.'), list(), detail);
     drawDetail();
   }
   function drawDetail() {
@@ -26,14 +30,18 @@ export async function renderPractice({ S, go }) {
     const save = async (status) => { await api.put(`/learn/practice/${cur}`, { status, response: JSON.stringify(Object.fromEntries(FLOW.map(([k]) => [k, els[k].value]))), rubric: Object.fromEntries(Object.entries(rsel).filter(([, s]) => s.value !== '').map(([k, s]) => [k, Number(s.value)])) }); toast(status === 'done' ? '완료로 표시했습니다.' : '저장했습니다.'); const np = await api.get('/learn/progress'); prog.practices = np.practices; Object.keys(byNo).forEach((k) => delete byNo[k]); np.practices.forEach((x) => { byNo[x.practice_no] = x; }); mount(); };
     const [route, label] = LINK[cur] || ['dash', '현황'];
     detail.append(card(`실습 ${p.no} · ${p.title}`,
-      h('div', { class: 'grid g2' },
+      isHr ? h('div', { class: 'grid g2' },
         h('div', null, h('h4', null, '현장 적용 장면'), h('p', null, `인력 준비요청 H-701 / 입사·배치 확인 과업 HR-047에서 ${p.scene}`), h('h4', null, '작성 과제'), h('p', null, p.task), p.hypothesis ? callout('warn', h('b', null, '시험할 다른 가능성 확인 원인 후보: '), `“${p.hypothesis}”`) : null),
-        h('div', null, h('h4', null, '계산과 검토'), h('p', { class: 'small' }, p.calc), h('h4', null, '다른 가능성과 완료 판단'), h('p', { class: 'small' }, p.done), callout('', h('b', null, '확인 기준: '), p.check))),
-      note(`${P.common.unit_rule} ${P.common.privacy}`), note(P.common.closing),
+        h('div', null, h('h4', null, '계산과 검토'), h('p', { class: 'small' }, p.calc), h('h4', null, '다른 가능성과 완료 판단'), h('p', { class: 'small' }, p.done), callout('', h('b', null, '확인 기준: '), p.check)))
+      : h('div', { class: 'grid g2' },
+        h('div', null, h('h4', null, '작성 과제'), h('p', null, `${eng.request_code} / 과업 ${eng.task_code}에서 `, h('b', null, `“${p.input || '—'}”`), '를 입력 또는 조사 대상으로 삼아 ', h('b', null, `“${p.process || '—'}”`), '를 수행하고 ', h('b', null, `“${p.deliverable || '—'}”`), '를 제출한다. 먼저 본문의 작성 예를 따라 계산한 뒤, 원자료 한 행 또는 기준 조건 하나를 바꾸어 결과가 어떻게 달라지는지 설명한다. 원문 없이 합계만 입력한 답안은 완료로 판정하지 않는다.'), callout('', h('b', null, '확인 기준: '), p.check),
+          p.done ? callout('warn', h('b', null, '완료 판정: '), p.done) : null),
+        h('div', null, h('h4', null, '현장 적용과 해설'), p.commentary.length ? p.commentary.map((c) => h('p', { class: 'small' }, c)) : h('p', { class: 'small muted' }, '이 실습의 해설은 표·도해 중심입니다. 원고를 참고하세요.'))),
+      isHr ? [note(`${P.common.unit_rule} ${P.common.privacy}`), note(P.common.closing)] : null,
       h('div', { class: 'row' }, h('button', { class: 'btn ghost sm', onclick: () => go(route) }, `플랫폼에서 해 보기: ${label} →`), (byNo[cur] ? pill(ST[byNo[cur].status][0], ST[byNo[cur].status][1]) : pill('미착수')))),
       card('내 제출 — 여섯 칸', FLOW.map(([k, l]) => field(l, els[k])), h('h4', { style: 'margin-top:12px' }, '루브릭 자가 평가'), h('div', { class: 'grid g3' }, R.rows.map((r) => field(r.name, rsel[r.key]))), note(R.note),
         h('div', { class: 'row' }, actionBtn('임시 저장', () => save('doing'), { cls: 'ghost' }), actionBtn('완료로 표시', () => save('done')), note('빈칸이 있는 실습은 완료로 표시되지 않습니다.'))),
-      h('p', { class: 'tiny muted' }, P.common.source_note));
+      h('p', { class: 'tiny muted' }, isHr ? P.common.source_note : P.source_note));
   }
   mount();
   return holder;

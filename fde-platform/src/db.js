@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS adapters (
   start_owner TEXT NOT NULL,          -- 착수 근거를 쥔 역할
   requirements TEXT NOT NULL,         -- JSON [{key,label,source,owner}]  '준비'의 3~5요건
   role_labels TEXT,                   -- JSON {역할키: 업종에서 쓰는 이름}
+  request_label TEXT,                 -- 요청 번호의 이름(인력 준비요청·주문 등)
   trap TEXT,                          -- 완료의 함정
   regulations TEXT,                   -- 규정·민감정보
   created_at TEXT NOT NULL

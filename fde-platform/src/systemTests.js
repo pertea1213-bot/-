@@ -45,7 +45,7 @@ const CATALOG = [
 
 function makeEnv() {
   const db = open(':memory:');
-  seed.seedAll(db, {}); // 시험에는 사용자가 필요 없다(scrypt 비용 회피)
+  seed.seedAll(db, { only: ['H-701'] }); // 시험에는 사용자·다른 사례가 필요 없다(속도)
   const id = db.prepare(`SELECT id FROM engagements WHERE request_code='H-701'`).get().id;
   let t = Date.parse('2026-10-06T09:00:00.000Z');
   const clock = () => { t += 60000; return new Date(t); };

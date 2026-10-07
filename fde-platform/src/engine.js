@@ -138,15 +138,23 @@ function finalizeCounts(b, required) {
 }
 
 function metricsOf(c) {
-  const shortage = c.required - c.approved;
-  const parts = { review: c.review, unconfirmed: c.unconfirmed, in_progress: c.in_progress, reserve: c.reserve };
+  // 부족 = max(0, 요구 − 승인). 승인이 요구를 넘으면 부족이 아니라 초과(surplus)다(예: 가용 840 vs 주문 700).
+  const gap = c.required - c.approved;
+  const shortage = Math.max(0, gap);
+  // 부족의 구성은 검토 → 미확인 → 진행 → 예비 순으로 부족분을 채워 나간다.
+  // 요구 = 입력이면 각 칸이 그대로 구성이 된다(인사 45 = 8+4+0+5). 입력이 요구보다 크면(의류 재단 420 vs 주문 400)
+  // 부족을 이미 설명한 뒤 남는 칸은 '초과분'으로 따로 남기고 부족 구성에 억지로 넣지 않는다.
+  const pool = { review: c.review, unconfirmed: c.unconfirmed, in_progress: c.in_progress, reserve: c.reserve };
+  const parts = {}; let left = shortage;
+  for (const k of ['review', 'unconfirmed', 'in_progress', 'reserve']) { parts[k] = Math.min(pool[k], left); left -= parts[k]; }
   const explained = parts.review + parts.unconfirmed + parts.in_progress + parts.reserve;
   return {
     completion_rate: ratio(c.completed, c.started),   // 완료 ÷ 착수
     approval_rate: ratio(c.approved, c.completed),    // 승인 ÷ 완료
     fulfilment_rate: ratio(c.approved, c.required),   // 승인 ÷ 요구
-    shortage, shortage_parts: parts,
-    shortage_unexplained: shortage - explained,       // 요구 ≠ 입력이면 0이 아닐 수 있다 — 숨기지 않는다
+    shortage, surplus: Math.max(0, -gap), shortage_parts: parts, shortage_pool: pool,
+    pool_surplus: { review: pool.review - parts.review, unconfirmed: pool.unconfirmed - parts.unconfirmed, in_progress: pool.in_progress - parts.in_progress, reserve: pool.reserve - parts.reserve },
+    shortage_unexplained: shortage - explained,       // 입력이 요구보다 작아 설명되지 않는 부족 — 숨기지 않는다
   };
 }
 
@@ -209,7 +217,7 @@ function snapshot(db, engagementId, opts = {}) {
   const seen = new Set(); const dup = [];
   for (const it of out) { if (seen.has(it.ref_key)) dup.push(it.ref_key); seen.add(it.ref_key); }
 
-  if (counts.required !== counts.input) warnings.push({ code: 'REQUIRED_NE_INPUT', msg: `요구 ${counts.required} ≠ 입력 ${counts.input}: 정원 승인 범위와 입력 대상이 다릅니다.` });
+  if (counts.required !== counts.input) warnings.push({ code: 'REQUIRED_NE_INPUT', msg: `요구 ${counts.required} ≠ 입력 ${counts.input}: 요구(승인 범위·주문)와 입력 대상의 규모가 다릅니다. 부족은 요구 − 승인으로 계산하고, 부족을 설명하고 남은 칸은 초과분으로 따로 표시합니다.` });
 
   return {
     engagement: { id: eng.id, request_code: eng.request_code, task_code: eng.task_code, title: eng.title, synthetic: !!eng.synthetic, sync_stage: eng.sync_stage, adapter_key: eng.adapter.key },
@@ -372,9 +380,11 @@ function costOf(cost) {
   if (!cost || !Array.isArray(cost.lines)) return null;
   const lines = cost.lines.map((l) => {
     const hours = (Number(l.qty) || 0) * (l.minutes != null ? Number(l.minutes) / 60 : Number(l.hours) || 0);
+    // 금액을 직접 적은 행(자재·견적 등)은 인시 계산을 거치지 않는다.
+    if (l.amount != null) return { ...l, person_hours: Math.round(hours * 100) / 100, amount: Math.round(Number(l.amount) || 0) };
     return { ...l, person_hours: Math.round(hours * 100) / 100, amount: Math.round(hours * (Number(l.rate) || 0)) };
   });
-  return { lines, person_hours: lines.reduce((s, l) => s + l.person_hours, 0), amount: lines.reduce((s, l) => s + l.amount, 0), assumption: true, disclaimer: '교육용 업무 부담 가정입니다. 직원에게 실제 지급할 임금·수당, 법정 교육 비용 또는 자동 절감액이 아닙니다.' };
+  return { lines, person_hours: Math.round(lines.reduce((s, l) => s + l.person_hours, 0) * 100) / 100, amount: lines.reduce((s, l) => s + l.amount, 0), assumption: true, disclaimer: '교육용 업무 부담·비용 가정입니다. 실제 지급할 임금·수당, 법정 비용, 장부 원가 또는 자동 절감액이 아닙니다.' };
 }
 
 /** 가정 시나리오 모의계산 (실측 아님, 기록을 바꾸지 않는다) */

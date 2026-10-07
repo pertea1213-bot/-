@@ -5,19 +5,14 @@
  *  - 제조(30건)·외식(18명): 교안 모듈 B의 가상 예시.
  * ⚠ 원문에는 대상별 행 데이터가 없다. 대상별 행(P-001…)·날짜·자료 번호는 합계·부서별 표를 재현하도록 만든 *합성 데이터*다.
  */
-const { hashPassword, jparse } = require('../util');
-const engine = require('../engine');
-const { defaultTrialWeeks } = require('../worktools');
-
-const ISO = (d, h = 9) => `${d}T${String(h).padStart(2, '0')}:00:00.000Z`;
-const addDays = (d, n) => { const x = new Date(`${d}T00:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
-
-function lcg(seed) { let s = seed >>> 0; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
-function shuffle(arr, rnd) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const { hashPassword } = require('../util');
+const core = require('./core');
+const cases = require('./cases');
+const { seedCase, addHypotheses, addIntervention, addScenario } = core;
 
 const ADAPTERS = [
   {
-    key: 'hr-onboarding', name: '인사·조직 — 신규 입사자 배치 준비', industry: '인사·조직', task_name: '입사·배치 확인 과업', unit: '명',
+    key: 'hr-onboarding', name: '인사·조직 — 신규 입사자 배치 준비', industry: '인사·조직', task_name: '입사·배치 확인 과업', unit: '명', request_label: '인력 준비요청',
     item_label: '사람', group_label: '부서', start_label: '입사 확인', start_owner: 'hr',
     requirements: [
       { key: 'TRAINING', label: '직무 교육 수료·평가', source: '교육 수료·평가', owner: 'manager' },
@@ -29,7 +24,7 @@ const ADAPTERS = [
     regulations: '개인정보는 최소 필드와 역할별 열람으로 제한. 입사·교육·권한 처리 기록의 목적·접근권한·보존 기간은 현장 정책과 법률 검토로 정한다. 노무 판단은 공인노무사와 인사 책임자의 별도 검토.',
   },
   {
-    key: 'mfg-workorder', name: '제조 — 작업지시 투입', industry: '제조', task_name: '작업지시 투입 확인', unit: '건',
+    key: 'mfg-workorder', name: '제조 — 작업지시 투입', industry: '제조', task_name: '작업지시 투입 확인', unit: '건', request_label: '작업지시 요청',
     item_label: '작업지시', group_label: '생산 라인', start_label: '투입 착수', start_owner: 'manager',
     requirements: [
       { key: 'MATERIAL', label: '자재 입고', source: '입고 기록', owner: 'manager' },
@@ -40,7 +35,7 @@ const ADAPTERS = [
     trap: '생산 완료 ≠ 출하 가능.', regulations: '품질·안전 규정은 해당 전문가가 확인한다.',
   },
   {
-    key: 'restaurant-open', name: '외식·카페 — 점포 오픈 인력', industry: '외식·카페', task_name: '점포 오픈 인력 준비', unit: '명',
+    key: 'restaurant-open', name: '외식·카페 — 점포 오픈 인력', industry: '외식·카페', task_name: '점포 오픈 인력 준비', unit: '명', request_label: '오픈 요청',
     item_label: '직원', group_label: '파트', start_label: '근무 확정', start_owner: 'hr',
     requirements: [
       { key: 'RECIPE', label: '레시피 교육', source: '교육 기록', owner: 'manager' },
@@ -61,68 +56,12 @@ const USERS = [
 
 function seedBase(db, { demoPassword, now = new Date() } = {}) {
   const t = now.toISOString();
-  const insA = db.prepare(`INSERT OR IGNORE INTO adapters (key,name,industry,task_name,unit,item_label,group_label,start_label,start_owner,requirements,role_labels,trap,regulations,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
-  for (const a of ADAPTERS) insA.run(a.key, a.name, a.industry, a.task_name, a.unit, a.item_label, a.group_label, a.start_label, a.start_owner, JSON.stringify(a.requirements), JSON.stringify(a.role_labels), a.trap, a.regulations, t);
+  const insA = db.prepare(`INSERT OR IGNORE INTO adapters (key,name,industry,task_name,unit,item_label,group_label,start_label,start_owner,requirements,role_labels,request_label,trap,regulations,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+  for (const a of [...ADAPTERS, ...cases.ADAPTERS]) insA.run(a.key, a.name, a.industry, a.task_name, a.unit, a.item_label, a.group_label, a.start_label, a.start_owner, JSON.stringify(a.requirements), JSON.stringify(a.role_labels), a.request_label || '요청', a.trap, a.regulations, t);
   if (demoPassword) {
     const insU = db.prepare('INSERT OR IGNORE INTO users (username,display_name,role,pw_hash,created_at) VALUES (?,?,?,?,?)');
     for (const [u, n, r] of USERS) insU.run(u, n, r, hashPassword(demoPassword), t);
   }
-}
-
-/**
- * 범용 사례 시더. 버킷별로 어떤 요건이 어떤 상태인지:
- *  approved: 모두 verified / review: reviewKey=unmet / unconfirmed: unconfirmedKey=missing / in_progress: pendingKey=pending / reserve: 착수 근거 없음
- */
-function seedCase(db, spec) {
-  const ad = engine.loadAdapter(db, db.prepare('SELECT id FROM adapters WHERE key=?').get(spec.adapter).id);
-  const keys = ad.requirements.map((r) => r.key);
-  const created = '2026-09-01T00:00:00.000Z';
-  const eid = Number(db.prepare(`INSERT INTO engagements (request_code,task_code,title,adapter_id,basis_date,synthetic,notes,created_at) VALUES (?,?,?,?,?,1,?,?)`)
-    .run(spec.request_code, spec.task_code, spec.title, ad.id, spec.basis, spec.notes || null, created).lastInsertRowid);
-  db.prepare(`INSERT INTO rule_versions (engagement_id,version,effective_from,required_keys,note) VALUES (?,?,?,?,?)`).run(eid, 1, '1970-01-01T00:00:00.000Z', JSON.stringify(keys), '초기 규칙: 준비 요건 전체 충족');
-  const gid = {};
-  for (const g of spec.groups) gid[g.code] = Number(db.prepare('INSERT INTO groups (engagement_id,code,name,required) VALUES (?,?,?,?)').run(eid, g.code, g.name, g.required).lastInsertRowid);
-
-  const list = [];
-  for (const g of spec.groups) for (const [b, n] of Object.entries(g.counts)) for (let i = 0; i < n; i++) list.push({ g: g.code, b });
-  const rnd = lcg(spec.seed || 7);
-  const order = shuffle(list, rnd);
-  const hired = order.filter((x) => x.b !== 'reserve');
-  const dist = spec.cohortSizes; let ci = 0, used = 0;
-  const reserveDates = spec.reserveDates; let ri = 0;
-  const insI = db.prepare('INSERT INTO items (engagement_id,ref_key,group_id,planned_on,created_at) VALUES (?,?,?,?,?)');
-  const insAs = db.prepare('INSERT INTO assignments (engagement_id,item_id,group_id,created_at,created_by) VALUES (?,?,?,?,?)');
-  const insE = db.prepare(`INSERT INTO evidence (engagement_id,item_id,requirement_key,value,source_ref,source_version,unit,occurred_at,recorded_at,recorded_by,origin,status,confirmed_at,confirmed_by,note)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?, 'confirmed', ?, ?, ?)`);
-  const ev = (item, key, value, ref, occ, recDelay, note, ver) => {
-    const rec = new Date(new Date(occ).getTime() + recDelay * 3600000).toISOString();
-    insE.run(eid, item, key, value, ref, ver || null, ad.unit, occ, rec, 'seed', 'import', rec, 'seed', note || null);
-  };
-  const items = [];
-  let n = 0;
-  for (const x of order) {
-    n++;
-    const ref = `${spec.refPrefix}-${String(n).padStart(3, '0')}`;
-    const startDay = x.b === 'reserve' ? null : spec.cohortDates[ci];
-    const planned = x.b === 'reserve' ? reserveDates[ri++ % reserveDates.length] : null;
-    if (x.b !== 'reserve') { used++; if (used >= dist[ci]) { used = 0; ci++; } }
-    const id = Number(insI.run(eid, ref, gid[x.g], planned, created).lastInsertRowid);
-    insAs.run(eid, id, gid[x.g], created, 'seed');
-    items.push({ id, ref, ...x });
-    if (x.b === 'reserve') continue;
-    ev(id, '_START', 'verified', `${spec.refPrefix}-S-${String(n).padStart(3, '0')}`, ISO(startDay, 9), 9, `${ad.start_label} 근거`);
-    keys.forEach((k, ki) => {
-      const day = addDays(startDay, 1 + ki);
-      const src = `${spec.srcPrefix[k] || k}-${String(n).padStart(3, '0')}`;
-      let v = 'verified', ref2 = src, note = null;
-      if (x.b === 'review' && k === spec.reviewKey) { v = 'unmet'; ref2 = `NOSET-${String(n).padStart(3, '0')}`; note = '접근 미설정 사유 확인 필요(원인 미판정)'; }
-      if (x.b === 'unconfirmed' && k === spec.unconfirmedKey) { v = 'missing'; ref2 = `UNK-${String(n).padStart(3, '0')}`; note = '이수 불명 자료 — 근거 확인 필요'; }
-      if (x.b === 'in_progress' && k === spec.pendingKey) { v = 'pending'; note = '확인 진행 중'; }
-      ev(id, k, v, ref2, ISO(day, 10), 6, note, v === 'verified' ? 'v1' : null);
-    });
-  }
-  defaultTrialWeeks(db, eid);
-  return { eid, items };
 }
 
 function seedHr(db) {
@@ -138,8 +77,9 @@ function seedHr(db) {
     cohortSizes: [4, 3, 3, 4, 3, 4, 3, 4, 3, 3, 3, 3],
     cohortDates: ['2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11', '2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18', '2026-09-21', '2026-09-22'],
     reserveDates: ['2026-10-12', '2026-10-12', '2026-10-12', '2026-10-19', '2026-10-19'],
-    reviewKey: 'ACCOUNT', unconfirmedKey: 'TRAINING', pendingKey: 'MANAGER',
-    srcPrefix: { TRAINING: 'EDU', ACCOUNT: 'LOG', MANAGER: 'MGR' },
+    reviewKeys: ['ACCOUNT'], unconfirmedMissing: ['TRAINING'], pendingKeys: ['MANAGER'],
+    srcPrefix: { _START: 'P', TRAINING: 'EDU', ACCOUNT: 'LOG', MANAGER: 'MGR' },
+    noteFn: (x, k, v) => (v === 'unmet' ? '접근 미설정 사유 확인 필요(원인 미판정)' : v === 'missing' ? '이수 불명 자료 — 근거 확인 필요' : null),
   });
   const R = (code, kind, title, desc, bucket, task, roles, cost, stop, rec) => {
     const info = db.prepare(`INSERT INTO interventions (engagement_id,code,kind,title,description,target_bucket,task_key,required_roles,cost,stop_condition,recovery_path,proposed_by,created_at,updated_at)
@@ -197,7 +137,7 @@ function seedMfg(db) {
       { code: 'LC', name: '라인 C', required: 8, counts: { approved: 4, review: 1, unconfirmed: 0, in_progress: 0, reserve: 3 } },
     ],
     cohortSizes: [5, 5, 5, 5, 6], cohortDates: ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-28'], reserveDates: ['2026-10-12', '2026-10-13'],
-    reviewKey: 'EQUIPMENT', unconfirmedKey: 'INSPECTION', pendingKey: 'MATERIAL', srcPrefix: { MATERIAL: 'RCV', EQUIPMENT: 'EQP', INSPECTION: 'QC' },
+    reviewKeys: ['EQUIPMENT'], unconfirmedMissing: ['INSPECTION'], pendingKeys: ['MATERIAL'], srcPrefix: { _START: 'W', MATERIAL: 'RCV', EQUIPMENT: 'EQP', INSPECTION: 'QC' },
   }).eid;
 }
 function seedRestaurant(db) {
@@ -209,13 +149,25 @@ function seedRestaurant(db) {
       { code: 'KITCHEN', name: '주방', required: 9, counts: { approved: 5, review: 1, unconfirmed: 2, in_progress: 0, reserve: 1 } },
     ],
     cohortSizes: [4, 4, 4, 4], cohortDates: ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24'], reserveDates: ['2026-10-12'],
-    reviewKey: 'POS', unconfirmedKey: 'HYGIENE', pendingKey: 'RECIPE', srcPrefix: { RECIPE: 'RCP', HYGIENE: 'HYG', POS: 'POS' },
+    reviewKeys: ['POS'], unconfirmedMissing: ['HYGIENE'], pendingKeys: ['RECIPE'], srcPrefix: { _START: 'E', RECIPE: 'RCP', HYGIENE: 'HYG', POS: 'POS' },
   }).eid;
 }
 
-function seedAll(db, opts) {
-  seedBase(db, opts);
-  if (!db.prepare('SELECT 1 FROM engagements').get()) { seedHr(db); seedMfg(db); seedRestaurant(db); }
+// 순서가 의미 있다(HR 이 1번 과업). 키가 정수형('13')이면 객체는 항상 맨 앞으로 열거하므로 배열을 쓴다.
+const CASES = [
+  ['H-701', () => module.exports.seedHr], ['M-301', () => module.exports.seedMfg], ['R-205', () => module.exports.seedRestaurant],
+  ['13', () => cases.seedAcademy], ['O-601', () => cases.seedApparel], ['O-301', () => cases.seedBread],
+];
+const seederFor = (code) => { const c = CASES.find(([k]) => k === code); return c ? c[1]() : null; };
+
+/** only: ['H-701'] 처럼 일부 사례만 만든다(시험 속도용). 한 트랜잭션으로 처리해 첫 기동도 빠르다. */
+function seedAll(db, opts = {}) {
+  db.transaction(() => {
+    seedBase(db, opts);
+    if (!db.prepare('SELECT 1 FROM engagements').get()) {
+      for (const [code, get] of CASES) if (!opts.only || opts.only.includes(code)) get()(db);
+    }
+  })();
 }
 
 /** 한 사례를 초기 상태로 되돌린다(데모/교육용). 처리 기록(audit)은 보존한다. */
@@ -228,11 +180,11 @@ function resetCase(db, engagementId) {
     db.prepare(`DELETE FROM checklist_state WHERE engagement_id=?`).run(engagementId);
     db.prepare(`DELETE FROM external_ledger`).run();
     db.prepare('DELETE FROM engagements WHERE id=?').run(engagementId);
-    const fn = { 'H-701': seedHr, 'M-301': seedMfg, 'R-205': seedRestaurant }[e.request_code];
+    const fn = seederFor(e.request_code);
     if (!fn) throw new Error('이 과업은 초기화 시드가 없습니다(직접 만든 과업).');
     fn(db);
   })();
   return db.prepare('SELECT id FROM engagements WHERE request_code=?').get(e.request_code).id;
 }
 
-module.exports = { seedAll, seedBase, seedHr, seedMfg, seedRestaurant, seedCase, resetCase, ADAPTERS, USERS };
+module.exports = { seedAll, seedBase, seedHr, seedMfg, seedRestaurant, seedAcademy: cases.seedAcademy, seedApparel: cases.seedApparel, seedBread: cases.seedBread, seedCase, resetCase, ADAPTERS, USERS };

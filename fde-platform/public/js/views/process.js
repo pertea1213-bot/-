@@ -54,6 +54,7 @@ export async function render({ S, go }) {
 
   holder.append(
     h('div', { class: 'row sb' }, h('h1', null, '현장 컨설팅 9단계'), h('span', { class: 'small muted' }, `${d.engagement.request_code} / ${d.engagement.task_code}`)),
+    d.adapter.key !== 'hr-onboarding' ? callout('warn', h('b', null, '안내: '), `이 화면의 9단계 문구(핵심 질문·근거 자료·함정·다른 가능성)는 인사 사례(교안·원문 제20장) 기준의 예시입니다. ‘${d.adapter.name}’ 사례의 단계별 본문은 원고 제1부를 참고하세요. 이 사례의 문제 문장·모집단·원인 후보·조치는 ‘과업 현황’의 사례 개요와 ‘원인 후보’·‘조치’ 화면에 있습니다.`) : null,
     callout('', P.intro), h('div', { class: 'grid g3' }, P.three_lessons.map((l) => h('div', { class: 'callout', style: 'margin:0' }, h('b', null, l.title), h('div', { class: 'small' }, l.desc)))),
     h('div', { class: 'card', style: 'margin-top:16px' }, h('div', { class: 'row', style: 'margin-bottom:8px' }, P.groups.map((g) => pill(g.name))), bar, note(P.ready_def), callout('', h('b', null, P.one_line))),
     detail);
