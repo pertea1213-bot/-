@@ -97,8 +97,6 @@ function sanitizeOriginalName(name) {
 function serialize(row) {
   return {
     id: row.id,
-    surveyMethod: row.survey_method,
-    surveyChannel: row.survey_channel,
     surveyDate: row.survey_date,
     contactDeptPosition: row.contact_dept_position,
     contactPhone: row.contact_phone,
@@ -194,8 +192,6 @@ function handleSubmit(req, res) {
   }
 
   const values = {
-    survey_method: body.surveyMethod || null,
-    survey_channel: body.surveyChannel || null,
     survey_date: body.surveyDate || null,
     contact_dept_position: body.contactDeptPosition || null,
     contact_phone: body.contactPhone || null,

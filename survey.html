@@ -73,12 +73,6 @@
     <div class="card">
       <h2>작성정보</h2>
       <div class="form-grid">
-        <div class="field"><label>조사방식</label>
-          <select id="surveyMethod"><option value="">선택</option><option value="외주">외주</option><option value="자체">자체</option></select>
-        </div>
-        <div class="field"><label>조사방법</label>
-          <select id="surveyChannel"><option value="">선택</option><option value="현지">현지</option><option value="유선">유선</option></select>
-        </div>
         <div class="field"><label>작성일</label><input type="date" id="surveyDate"></div>
         <div class="field"><label>작성자 부서/직위</label><input type="text" id="contactDeptPosition" placeholder="예: 경영지원팀 대리"></div>
         <div class="field"><label>작성자 연락처</label><input type="text" id="contactPhone" placeholder="010-0000-0000"></div>
@@ -494,8 +488,6 @@ form.addEventListener('submit', async (e) => {
   const fd = new FormData();
   fd.append('website', document.querySelector('input[name=website]').value);
 
-  fd.append('surveyMethod', val('surveyMethod'));
-  fd.append('surveyChannel', val('surveyChannel'));
   fd.append('surveyDate', val('surveyDate'));
   fd.append('contactDeptPosition', val('contactDeptPosition'));
   fd.append('contactPhone', val('contactPhone'));
