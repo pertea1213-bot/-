@@ -89,7 +89,7 @@ function renderPromotionsSection(promotions) {
   if (!promotions || !Array.isArray(promotions.items) || promotions.items.length === 0) return "";
   const { heading, contactPhone, contactEmail, items } = promotions;
   const headingHtml = heading
-    ? `<div style="font-weight:700;font-size:17px;color:#1a1a1a;">${escapeHtml(heading)}</div>`
+    ? `<div style="font-weight:800;font-size:21px;color:#1a1a1a;">${escapeHtml(heading)}</div>`
     : "";
 
   const contactParts = [];
@@ -100,7 +100,7 @@ function renderPromotionsSection(promotions) {
     );
   }
   const contactHtml = contactParts.length > 0
-    ? `<div style="font-size:15px;font-weight:700;color:#999;margin:2px 0 12px;">문의 ${contactParts.join(" | ")}</div>`
+    ? `<div style="font-size:17px;font-weight:800;color:#555;margin:4px 0 12px;">문의 ${contactParts.join(" | ")}</div>`
     : "";
 
   return `
