@@ -58,14 +58,16 @@ function renderNeonBox(neonConfig) {
   const lines = neonConfig.text.split("\n").filter(Boolean);
   const linesHtml = lines
     .map((line, i) => {
-      const size = i === 0 ? "16px" : "21px";
-      const weight = i === 0 ? "600" : "800";
-      return `<div style="color:#00f0ff;font-weight:${weight};font-size:${size};text-shadow:0 0 6px #00f0ff,0 0 14px #00f0ff;letter-spacing:0.5px;">${escapeHtml(line)}</div>`;
+      const size = i === 0 ? "20px" : "30px";
+      const weight = i === 0 ? "700" : "800";
+      const glow =
+        "0 0 4px #fff,0 0 10px #00f0ff,0 0 20px #00f0ff,0 0 40px #00f0ff,0 0 70px #00f0ff";
+      return `<div style="color:#fff;font-weight:${weight};font-size:${size};text-shadow:${glow};letter-spacing:1px;">${escapeHtml(line)}</div>`;
     })
     .join("");
 
   return `
-    <div style="background:#0a0e27;border:2px solid #00f0ff;border-radius:8px;padding:16px 20px;margin-bottom:8px;text-align:center;box-shadow:0 0 10px rgba(0,240,255,0.6);">
+    <div style="background:#05081a;border:2px solid #00f0ff;border-radius:8px;padding:22px 20px;margin-bottom:8px;text-align:center;box-shadow:0 0 10px rgba(0,240,255,0.9),0 0 25px rgba(0,240,255,0.6),0 0 50px rgba(0,240,255,0.4);">
       ${linesHtml}
     </div>`;
 }
