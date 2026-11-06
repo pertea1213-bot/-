@@ -23,24 +23,24 @@ function formatIssueDate(date = new Date()) {
 
 function renderBanner(subjectPrefix, tagline, bannerSubtitle, issueNumber) {
   const taglineHtml = tagline
-    ? `<div style="font-size:13px;color:#a9c2e8;margin-bottom:8px;">${escapeHtml(tagline)}</div>`
+    ? `<div style="font-size:15px;color:#a9c2e8;margin-bottom:8px;">${escapeHtml(tagline)}</div>`
     : "";
   const subtitleHtml = bannerSubtitle
-    ? `<div style="font-size:13px;color:#dbe4f2;line-height:1.6;margin-top:12px;">${escapeHtml(bannerSubtitle)}</div>`
+    ? `<div style="font-size:15px;color:#dbe4f2;line-height:1.6;margin-top:12px;">${escapeHtml(bannerSubtitle)}</div>`
     : "";
 
   return `
     <table style="width:100%;border-collapse:collapse;margin-bottom:8px;">
       <tr>
-        <td style="font-weight:700;font-size:14px;color:#1a1a1a;">${escapeHtml(subjectPrefix)}</td>
-        <td style="text-align:right;color:#888;font-size:12px;">
+        <td style="font-weight:700;font-size:16px;color:#1a1a1a;">${escapeHtml(subjectPrefix)}</td>
+        <td style="text-align:right;color:#888;font-size:14px;">
           ${escapeHtml(formatIssueDate())} · VOL. ${issueNumber}
         </td>
       </tr>
     </table>
     <div style="background:${BRAND_COLOR};border-radius:8px;padding:32px 28px;margin-bottom:8px;">
       ${taglineHtml}
-      <div style="font-size:24px;font-weight:800;color:#fff;line-height:1.3;">${escapeHtml(subjectPrefix)}</div>
+      <div style="font-size:26px;font-weight:800;color:#fff;line-height:1.3;">${escapeHtml(subjectPrefix)}</div>
       ${subtitleHtml}
     </div>`;
 }
@@ -48,8 +48,8 @@ function renderBanner(subjectPrefix, tagline, bannerSubtitle, issueNumber) {
 function renderSectionHeader(title) {
   return `
     <div style="border-top:3px solid ${BRAND_COLOR};padding:10px 0 8px;margin:28px 0 4px;">
-      <span style="display:inline-block;width:6px;height:14px;background:${BRAND_COLOR};margin-right:6px;vertical-align:middle;"></span>
-      <span style="font-weight:700;font-size:15px;color:#1a1a1a;vertical-align:middle;">${escapeHtml(title)}</span>
+      <span style="display:inline-block;width:6px;height:16px;background:${BRAND_COLOR};margin-right:6px;vertical-align:middle;"></span>
+      <span style="font-weight:700;font-size:17px;color:#1a1a1a;vertical-align:middle;">${escapeHtml(title)}</span>
     </div>`;
 }
 
@@ -58,7 +58,7 @@ function renderNeonBox(neonConfig) {
   const lines = neonConfig.text.split("\n").filter(Boolean);
   const linesHtml = lines
     .map((line, i) => {
-      const size = i === 0 ? "14px" : "19px";
+      const size = i === 0 ? "16px" : "21px";
       const weight = i === 0 ? "600" : "800";
       return `<div style="color:#00f0ff;font-weight:${weight};font-size:${size};text-shadow:0 0 6px #00f0ff,0 0 14px #00f0ff;letter-spacing:0.5px;">${escapeHtml(line)}</div>`;
     })
@@ -75,12 +75,12 @@ function renderPromotionRow(item, index) {
   return `
     <tr>
       <td style="padding:12px 0;border-bottom:1px solid #eee;vertical-align:top;width:28px;">
-        <span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;background:${BRAND_COLOR};color:#fff;font-size:11px;font-weight:700;border-radius:50%;">${num}</span>
+        <span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background:${BRAND_COLOR};color:#fff;font-size:12px;font-weight:700;border-radius:50%;">${num}</span>
       </td>
       <td style="padding:12px 0;border-bottom:1px solid #eee;">
-        <span style="font-weight:700;font-size:14px;color:#1a1a1a;">${escapeHtml(item.title)}</span>
-        <a href="${escapeHtml(item.url)}" style="margin-left:8px;color:${BRAND_COLOR};font-size:12px;text-decoration:none;">${escapeHtml(item.linkLabel)} 사업소개 ↗</a>
-        <div style="color:#777;font-size:12px;margin-top:4px;">${escapeHtml(item.org)} | ${escapeHtml(item.description)}</div>
+        <span style="font-weight:700;font-size:16px;color:#1a1a1a;">${escapeHtml(item.title)}</span>
+        <a href="${escapeHtml(item.url)}" style="margin-left:8px;color:${BRAND_COLOR};font-size:14px;text-decoration:none;">${escapeHtml(item.linkLabel)} 사업소개 ↗</a>
+        <div style="color:#777;font-size:14px;margin-top:4px;">${escapeHtml(item.org)} | ${escapeHtml(item.description)}</div>
       </td>
     </tr>`;
 }
@@ -89,7 +89,7 @@ function renderPromotionsSection(promotions) {
   if (!promotions || !Array.isArray(promotions.items) || promotions.items.length === 0) return "";
   const { heading, contactPhone, contactEmail, items } = promotions;
   const headingHtml = heading
-    ? `<div style="font-weight:700;font-size:15px;color:#1a1a1a;">${escapeHtml(heading)}</div>`
+    ? `<div style="font-weight:700;font-size:17px;color:#1a1a1a;">${escapeHtml(heading)}</div>`
     : "";
 
   const contactParts = [];
@@ -100,7 +100,7 @@ function renderPromotionsSection(promotions) {
     );
   }
   const contactHtml = contactParts.length > 0
-    ? `<div style="font-size:13px;color:#999;margin:2px 0 12px;">문의 ${contactParts.join(" | ")}</div>`
+    ? `<div style="font-size:15px;font-weight:700;color:#999;margin:2px 0 12px;">문의 ${contactParts.join(" | ")}</div>`
     : "";
 
   return `
@@ -115,8 +115,8 @@ function renderCommentarySection(commentary) {
   if (!commentary) return "";
   return `
     <div style="background:#f4f7fb;border-left:4px solid ${BRAND_COLOR};border-radius:6px;padding:16px;margin-bottom:8px;">
-      <div style="font-size:12px;color:${BRAND_COLOR};font-weight:600;margin-bottom:8px;">오늘의 논평</div>
-      <div style="white-space:pre-line;color:#333;font-size:14px;line-height:1.7;">${escapeHtml(commentary)}</div>
+      <div style="font-size:14px;color:${BRAND_COLOR};font-weight:600;margin-bottom:8px;">오늘의 논평</div>
+      <div style="white-space:pre-line;color:#333;font-size:16px;line-height:1.7;">${escapeHtml(commentary)}</div>
     </div>`;
 }
 
@@ -125,9 +125,9 @@ function renderNewsRow(item) {
   const source = `${item.org}${dateLabel ? ` · ${dateLabel}` : ""}`;
   return `
     <div style="padding:14px 0;border-bottom:1px solid #eee;">
-      <a href="${escapeHtml(item.url)}" style="color:#1a1a1a;text-decoration:none;font-weight:700;font-size:15px;">${escapeHtml(item.title)}</a>
-      <div style="color:#999;font-size:12px;margin:6px 0 10px;">&lt;출처 : ${escapeHtml(source)}&gt;</div>
-      <a href="${escapeHtml(item.url)}" style="display:inline-block;background:${BRAND_COLOR};color:#fff;font-size:12px;font-weight:600;text-decoration:none;padding:6px 14px;border-radius:16px;">+ 자세히 보기</a>
+      <a href="${escapeHtml(item.url)}" style="color:#1a1a1a;text-decoration:none;font-weight:700;font-size:17px;">${escapeHtml(item.title)}</a>
+      <div style="color:#999;font-size:14px;margin:6px 0 10px;">&lt;출처 : ${escapeHtml(source)}&gt;</div>
+      <a href="${escapeHtml(item.url)}" style="display:inline-block;background:${BRAND_COLOR};color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:6px 14px;border-radius:16px;">+ 자세히 보기</a>
     </div>`;
 }
 
@@ -140,11 +140,11 @@ function renderNewsSection(newsItems) {
 function renderAnnouncementRow(item) {
   return `
     <tr>
-      <td style="padding:10px 4px;border-bottom:1px solid #eee;font-size:14px;">
+      <td style="padding:10px 4px;border-bottom:1px solid #eee;font-size:16px;">
         <a href="${escapeHtml(item.url)}" style="color:#1a1a1a;text-decoration:none;">${escapeHtml(item.title)}</a>
-        <div style="color:#999;font-size:12px;margin-top:2px;">${escapeHtml(item.org)}</div>
+        <div style="color:#999;font-size:14px;margin-top:2px;">${escapeHtml(item.org)}</div>
       </td>
-      <td style="padding:10px 4px;border-bottom:1px solid #eee;font-size:12px;color:#999;text-align:right;white-space:nowrap;vertical-align:top;">${item.deadline ? `- ${escapeHtml(item.deadline)}` : ""}</td>
+      <td style="padding:10px 4px;border-bottom:1px solid #eee;font-size:14px;color:#999;text-align:right;white-space:nowrap;vertical-align:top;">${item.deadline ? `- ${escapeHtml(item.deadline)}` : ""}</td>
     </tr>`;
 }
 
@@ -169,11 +169,11 @@ function renderFooter(signatureImagePath, footerConfig) {
   return `
     ${signature}
     <div style="background:#2b2b2b;color:#fff;border-radius:8px;padding:20px;margin-top:24px;">
-      <div style="font-weight:700;font-size:14px;margin-bottom:6px;">${escapeHtml(companyName)}</div>
-      <div style="color:#bbb;font-size:12px;">${escapeHtml(address)}</div>
-      <div style="color:#888;font-size:11px;margin-top:8px;">COPYRIGHT © ${year} ${escapeHtml(companyName)}. ALL RIGHT RESERVED</div>
+      <div style="font-weight:700;font-size:16px;margin-bottom:6px;">${escapeHtml(companyName)}</div>
+      <div style="color:#bbb;font-size:14px;">${escapeHtml(address)}</div>
+      <div style="color:#888;font-size:13px;margin-top:8px;">COPYRIGHT © ${year} ${escapeHtml(companyName)}. ALL RIGHT RESERVED</div>
     </div>
-    <div style="text-align:center;color:#999;font-size:11px;margin-top:16px;line-height:1.6;">
+    <div style="text-align:center;color:#999;font-size:13px;margin-top:16px;line-height:1.6;">
       본 메일은 수신 동의하신 분께 발송되었습니다.<br/>
       더 이상 받고 싶지 않으시면 이 메일에 회신(수신거부)해주세요.
     </div>`;
@@ -191,7 +191,7 @@ function renderHtml(items, newsItems, commentary, config, issueNumber) {
   const newsSection = newsItems.length > 0 ? renderNewsSection(newsItems) : "";
 
   return `
-    <div style="font-family:sans-serif;max-width:700px;margin:0 auto;">
+    <div style="font-family:sans-serif;max-width:780px;margin:0 auto;">
       ${renderBanner(subjectPrefix, tagline, bannerSubtitle, issueNumber)}
       ${renderNeonBox(neonBanner)}
       ${renderPromotionsSection(promotions)}
