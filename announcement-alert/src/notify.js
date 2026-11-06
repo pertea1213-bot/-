@@ -166,7 +166,7 @@ function renderHtml(items, newsItems, commentary, config, issueNumber) {
   const newsSection = newsItems.length > 0 ? renderNewsSection(newsItems) : "";
 
   return `
-    <div style="font-family:sans-serif;max-width:640px;margin:0 auto;">
+    <div style="font-family:sans-serif;max-width:700px;margin:0 auto;">
       ${renderBanner(subjectPrefix, tagline, bannerSubtitle, issueNumber)}
       ${renderPromotionsSection(promotions)}
       ${renderCommentarySection(commentary)}
