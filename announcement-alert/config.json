@@ -75,6 +75,9 @@
     "bannerSubtitle": "사업공고・정책뉴스・논평까지, 한 번에 확인하는 코코그룹 정책 소식지입니다.",
     "uncategorizedLabel": "오늘의 정책사업",
     "signatureImagePath": "assets/signature.png",
+    "neonBanner": {
+      "text": "AX_NEON Ontology FDE 플랫폼\n12/24 오후 2시 론칭"
+    },
     "promotions": {
       "heading": "정부 무상지원사업, 기업 부담 없이 받는 전문 컨설팅",
       "subheading": "코코그룹이 함께합니다",

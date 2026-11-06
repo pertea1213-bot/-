@@ -53,6 +53,23 @@ function renderSectionHeader(title) {
     </div>`;
 }
 
+function renderNeonBox(neonConfig) {
+  if (!neonConfig || !neonConfig.text) return "";
+  const lines = neonConfig.text.split("\n").filter(Boolean);
+  const linesHtml = lines
+    .map((line, i) => {
+      const size = i === 0 ? "14px" : "19px";
+      const weight = i === 0 ? "600" : "800";
+      return `<div style="color:#00f0ff;font-weight:${weight};font-size:${size};text-shadow:0 0 6px #00f0ff,0 0 14px #00f0ff;letter-spacing:0.5px;">${escapeHtml(line)}</div>`;
+    })
+    .join("");
+
+  return `
+    <div style="background:#0a0e27;border:2px solid #00f0ff;border-radius:8px;padding:16px 20px;margin-bottom:8px;text-align:center;box-shadow:0 0 10px rgba(0,240,255,0.6);">
+      ${linesHtml}
+    </div>`;
+}
+
 function renderPromotionRow(item, index) {
   const num = String(index + 1).padStart(2, "0");
   return `
@@ -155,7 +172,7 @@ function renderFooter(signatureImagePath, footerConfig) {
 }
 
 function renderHtml(items, newsItems, commentary, config, issueNumber) {
-  const { subjectPrefix, tagline, bannerSubtitle, signatureImagePath, footer, promotions } = config.notify;
+  const { subjectPrefix, tagline, bannerSubtitle, signatureImagePath, footer, promotions, neonBanner } = config.notify;
 
   const fallbackLabel = config.notify.uncategorizedLabel ?? "기타";
   const groups = groupByCategory(items, config.categories ?? [], fallbackLabel);
@@ -168,6 +185,7 @@ function renderHtml(items, newsItems, commentary, config, issueNumber) {
   return `
     <div style="font-family:sans-serif;max-width:700px;margin:0 auto;">
       ${renderBanner(subjectPrefix, tagline, bannerSubtitle, issueNumber)}
+      ${renderNeonBox(neonBanner)}
       ${renderPromotionsSection(promotions)}
       ${renderCommentarySection(commentary)}
       ${newsSection}
