@@ -75,6 +75,48 @@
     "bannerSubtitle": "사업공고・정책뉴스・논평까지, 한 번에 확인하는 코코그룹 정책 소식지입니다.",
     "uncategorizedLabel": "오늘의 정책사업",
     "signatureImagePath": "assets/signature.png",
+    "promotions": {
+      "heading": "정부 무상지원사업, 기업 부담 없이 받는 전문 컨설팅",
+      "subheading": "코코그룹이 함께합니다",
+      "items": [
+        {
+          "title": "일터혁신 상생컨설팅",
+          "linkLabel": "nosa.or.kr",
+          "url": "https://www.nosa.or.kr",
+          "org": "고용노동부・노사발전재단",
+          "description": "인사・임금・평가・근로시간 등 일터혁신 전 분야 (신청: kwpi.or.kr)"
+        },
+        {
+          "title": "산업일자리전환컨설팅",
+          "linkLabel": "산업일자리.kr",
+          "url": "https://산업일자리.kr",
+          "org": "한국표준협회 산업일자리전환지원센터",
+          "description": "G-DAX 진단 기반 산업전환 로드맵・정부지원 연계"
+        },
+        {
+          "title": "재취업지원서비스컨설팅",
+          "linkLabel": "nosa.or.kr",
+          "url": "https://www.nosa.or.kr",
+          "org": "노사발전재단",
+          "description": "50세 이상 퇴직(예정)자 재취업지원서비스 제도 설계・운영 기업컨설팅"
+        },
+        {
+          "title": "커리어플래닝컨설팅",
+          "linkLabel": "nosa.or.kr",
+          "url": "https://www.nosa.or.kr",
+          "org": "노사발전재단",
+          "description": "재직자 생애경력설계・전직 준비 지원"
+        },
+        {
+          "title": "재기지원컨설팅",
+          "linkLabel": "kosmes.or.kr",
+          "url": "https://www.kosmes.or.kr/nsh/SH/SBI/SHSBI067M0.do",
+          "org": "중소벤처기업진흥공단",
+          "description": "경영위기 기업 진로제시・구조개선・회생 컨설팅 (60~360만원 지원)"
+        }
+      ],
+      "_note": "모든 링크는 2026-11-06에 검색으로 확인한 도메인/기관명 기준입니다. kosmes.or.kr 항목만 구체적인 사업 페이지 URL을 확인했고, 나머지는 하위 메뉴가 자주 바뀌는 기관 사이트라 안전하게 공식 도메인으로 연결해뒀습니다."
+    },
     "footer": {
       "companyName": "(주)콤파스컨설팅그룹",
       "address": "(04373) 서울 용산구 청파로 46, 한통빌딩 608호 (한강로3가)"

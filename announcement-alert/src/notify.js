@@ -53,6 +53,39 @@ function renderSectionHeader(title) {
     </div>`;
 }
 
+function renderPromotionRow(item, index) {
+  const num = String(index + 1).padStart(2, "0");
+  return `
+    <tr>
+      <td style="padding:12px 0;border-bottom:1px solid #eee;vertical-align:top;width:28px;">
+        <span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;background:${BRAND_COLOR};color:#fff;font-size:11px;font-weight:700;border-radius:50%;">${num}</span>
+      </td>
+      <td style="padding:12px 0;border-bottom:1px solid #eee;">
+        <span style="font-weight:700;font-size:14px;color:#1a1a1a;">${escapeHtml(item.title)}</span>
+        <a href="${escapeHtml(item.url)}" style="margin-left:8px;color:${BRAND_COLOR};font-size:12px;text-decoration:none;">${escapeHtml(item.linkLabel)} 사업소개 ↗</a>
+        <div style="color:#777;font-size:12px;margin-top:4px;">${escapeHtml(item.org)} | ${escapeHtml(item.description)}</div>
+      </td>
+    </tr>`;
+}
+
+function renderPromotionsSection(promotions) {
+  if (!promotions || !Array.isArray(promotions.items) || promotions.items.length === 0) return "";
+  const { heading, subheading, items } = promotions;
+  const headingHtml = heading
+    ? `<div style="font-weight:700;font-size:15px;color:#1a1a1a;">${escapeHtml(heading)}</div>`
+    : "";
+  const subheadingHtml = subheading
+    ? `<div style="font-size:13px;color:#999;margin:2px 0 12px;">${escapeHtml(subheading)}</div>`
+    : "";
+
+  return `
+    <div style="margin-bottom:8px;padding:16px 0 4px;border-bottom:2px solid #eee;">
+      ${headingHtml}
+      ${subheadingHtml}
+      <table style="width:100%;border-collapse:collapse;">${items.map(renderPromotionRow).join("")}</table>
+    </div>`;
+}
+
 function renderCommentarySection(commentary) {
   if (!commentary) return "";
   return `
@@ -122,7 +155,7 @@ function renderFooter(signatureImagePath, footerConfig) {
 }
 
 function renderHtml(items, newsItems, commentary, config, issueNumber) {
-  const { subjectPrefix, tagline, bannerSubtitle, signatureImagePath, footer } = config.notify;
+  const { subjectPrefix, tagline, bannerSubtitle, signatureImagePath, footer, promotions } = config.notify;
 
   const fallbackLabel = config.notify.uncategorizedLabel ?? "기타";
   const groups = groupByCategory(items, config.categories ?? [], fallbackLabel);
@@ -135,6 +168,7 @@ function renderHtml(items, newsItems, commentary, config, issueNumber) {
   return `
     <div style="font-family:sans-serif;max-width:640px;margin:0 auto;">
       ${renderBanner(subjectPrefix, tagline, bannerSubtitle, issueNumber)}
+      ${renderPromotionsSection(promotions)}
       ${renderCommentarySection(commentary)}
       ${newsSection}
       ${announcementSections}
