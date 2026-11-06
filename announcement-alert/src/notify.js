@@ -87,18 +87,26 @@ function renderPromotionRow(item, index) {
 
 function renderPromotionsSection(promotions) {
   if (!promotions || !Array.isArray(promotions.items) || promotions.items.length === 0) return "";
-  const { heading, subheading, items } = promotions;
+  const { heading, contactPhone, contactEmail, items } = promotions;
   const headingHtml = heading
     ? `<div style="font-weight:700;font-size:15px;color:#1a1a1a;">${escapeHtml(heading)}</div>`
     : "";
-  const subheadingHtml = subheading
-    ? `<div style="font-size:13px;color:#999;margin:2px 0 12px;">${escapeHtml(subheading)}</div>`
+
+  const contactParts = [];
+  if (contactPhone) contactParts.push(escapeHtml(contactPhone));
+  if (contactEmail) {
+    contactParts.push(
+      `<a href="mailto:${escapeHtml(contactEmail)}" style="color:${BRAND_COLOR};text-decoration:none;">${escapeHtml(contactEmail)}</a>`
+    );
+  }
+  const contactHtml = contactParts.length > 0
+    ? `<div style="font-size:13px;color:#999;margin:2px 0 12px;">문의 ${contactParts.join(" | ")}</div>`
     : "";
 
   return `
     <div style="margin-bottom:8px;padding:16px 0 4px;border-bottom:2px solid #eee;">
       ${headingHtml}
-      ${subheadingHtml}
+      ${contactHtml}
       <table style="width:100%;border-collapse:collapse;">${items.map(renderPromotionRow).join("")}</table>
     </div>`;
 }
