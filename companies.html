@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>기업정보 관리</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    background: #f0f4f8;
+    color: #1a202c;
+    min-height: 100vh;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  .topnav { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .topnav .links { display: flex; gap: 16px; }
+  .topnav a { color: #4a5568; text-decoration: none; font-size: 0.9rem; }
+  .topnav a:hover { text-decoration: underline; }
+  h1 { font-size: 1.6rem; margin-bottom: 24px; }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+  }
+  .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: #2d3748; }
+  label { display: block; font-size: 0.85rem; color: #4a5568; margin-bottom: 6px; font-weight: 600; }
+  input, textarea, select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #4299e1; }
+  textarea { resize: vertical; min-height: 60px; }
+  .btn-primary {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    background: #4299e1;
+    color: #fff;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary:hover { background: #3182ce; }
+  .btn-secondary {
+    padding: 6px 12px;
+    border: 1px solid #cbd5e0;
+    border-radius: 8px;
+    background: #fff;
+    color: #4a5568;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .btn-secondary:hover { background: #f7fafc; }
+  .btn-danger {
+    padding: 6px 12px;
+    border: 1px solid #fc8181;
+    border-radius: 8px;
+    background: #fff;
+    color: #e53e3e;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+  .btn-danger:hover { background: #fff5f5; }
+  #login-view { max-width: 360px; margin: 60px auto; }
+  .msg { margin-top: 14px; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; display: none; }
+  .msg.error { display: block; background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+  .msg.success { display: block; background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .search-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .search-row input { flex: 1; }
+  .company-list { display: flex; flex-direction: column; gap: 14px; }
+  .company-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .company-item:hover { border-color: #90cdf4; }
+  .company-main { flex: 1; min-width: 220px; }
+  .company-main .name { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+  .company-main .sub { color: #718096; font-size: 0.85rem; margin-bottom: 6px; }
+  .company-main .meta { color: #a0aec0; font-size: 0.8rem; display: flex; gap: 12px; flex-wrap: wrap; }
+  .badge { display: inline-block; font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; margin-left: 6px; background: #ebf8ff; color: #2b6cb0; }
+  .item-actions { display: flex; gap: 8px; }
+  .empty { color: #a0aec0; padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav">
+    <div class="links"><a href="pm.html">PM 관리 툴</a><a href="dashboard.html">기업조사표 대시보드</a></div>
+    <a href="#" id="logout-link" style="display:none;">로그아웃</a>
+  </div>
+
+  <div id="login-view">
+    <h1>기업정보 관리 로그인</h1>
+    <div class="card">
+      <form id="login-form">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" required>
+        <button type="submit" class="btn-primary" style="width:100%; margin-top:16px;">로그인</button>
+        <div id="login-msg" class="msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <div id="dashboard-view" style="display:none;">
+    <h1>기업정보 관리</h1>
+
+    <div class="card">
+      <h2 id="form-title">기업정보 등록</h2>
+      <form id="company-form">
+        <input type="hidden" id="c-id">
+        <div class="form-grid">
+          <div>
+            <label for="c-name">기업명 *</label>
+            <input type="text" id="c-name" required placeholder="예: (주)코코그룹">
+          </div>
+          <div>
+            <label for="c-biz-reg-no">사업자등록번호</label>
+            <input type="text" id="c-biz-reg-no" placeholder="000-00-00000">
+          </div>
+          <div>
+            <label for="c-ceo">대표자명</label>
+            <input type="text" id="c-ceo">
+          </div>
+          <div>
+            <label for="c-industry">업종</label>
+            <input type="text" id="c-industry" placeholder="예: 제조업">
+          </div>
+          <div>
+            <label for="c-region">지역</label>
+            <select id="c-region">
+              <option value="">선택 안함</option>
+              <option value="서울">서울</option>
+              <option value="경기">경기</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+          <div>
+            <label for="c-employees">직원수</label>
+            <input type="number" id="c-employees" min="0" step="1">
+          </div>
+          <div>
+            <label for="c-founded">설립일</label>
+            <input type="date" id="c-founded">
+          </div>
+          <div>
+            <label for="c-contact-name">담당자명</label>
+            <input type="text" id="c-contact-name">
+          </div>
+          <div>
+            <label for="c-contact-phone">담당자 연락처</label>
+            <input type="text" id="c-contact-phone" placeholder="010-0000-0000">
+          </div>
+          <div>
+            <label for="c-contact-email">담당자 이메일</label>
+            <input type="email" id="c-contact-email">
+          </div>
+        </div>
+        <label for="c-address">주소</label>
+        <input type="text" id="c-address" style="margin-bottom:14px;">
+        <label for="c-memo">메모</label>
+        <textarea id="c-memo" placeholder="기타 참고사항"></textarea>
+        <div style="margin-top:14px; display:flex; gap:10px;">
+          <button type="submit" class="btn-primary" id="form-submit">등록</button>
+          <button type="button" class="btn-secondary" id="form-cancel" style="display:none;">취소</button>
+        </div>
+        <div id="company-msg" class="msg"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>기업 목록</h2>
+      <div class="search-row">
+        <input type="text" id="search-input" placeholder="기업명, 사업자등록번호, 대표자, 업종으로 검색">
+      </div>
+      <div class="company-list" id="company-list"></div>
+      <div id="company-empty" class="empty" style="display:none;">등록된 기업이 없습니다.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN_KEY = 'consulting_admin_token';
+
+const loginView = document.getElementById('login-view');
+const dashboardView = document.getElementById('dashboard-view');
+const logoutLink = document.getElementById('logout-link');
+
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+function showMsg(el, text, type) { el.textContent = text; el.className = 'msg ' + type; }
+function clearMsg(el) { el.textContent = ''; el.className = 'msg'; }
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+async function apiFetch(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+      ...(options.headers || {}),
+    },
+  });
+  if (res.status === 401) {
+    clearToken();
+    renderAuthState();
+    throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
+  }
+  return res;
+}
+
+function renderAuthState() {
+  if (getToken()) {
+    loginView.style.display = 'none';
+    dashboardView.style.display = 'block';
+    logoutLink.style.display = 'inline';
+    loadCompanies();
+  } else {
+    loginView.style.display = 'block';
+    dashboardView.style.display = 'none';
+    logoutLink.style.display = 'none';
+  }
+}
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const loginMsg = document.getElementById('login-msg');
+  clearMsg(loginMsg);
+  const password = document.getElementById('password').value;
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showMsg(loginMsg, data.error || '로그인에 실패했습니다.', 'error'); return; }
+    setToken(data.token);
+    renderAuthState();
+  } catch (err) {
+    showMsg(loginMsg, '네트워크 오류가 발생했습니다.', 'error');
+  }
+});
+
+logoutLink.addEventListener('click', (e) => {
+  e.preventDefault();
+  clearToken();
+  renderAuthState();
+});
+
+const companyList = document.getElementById('company-list');
+const companyEmpty = document.getElementById('company-empty');
+const companyForm = document.getElementById('company-form');
+const formTitle = document.getElementById('form-title');
+const formSubmit = document.getElementById('form-submit');
+const formCancel = document.getElementById('form-cancel');
+const searchInput = document.getElementById('search-input');
+
+const fieldIds = {
+  id: 'c-id', name: 'c-name', bizRegNo: 'c-biz-reg-no', ceoName: 'c-ceo', industry: 'c-industry',
+  region: 'c-region', employeeCount: 'c-employees', foundedDate: 'c-founded', contactName: 'c-contact-name',
+  contactPhone: 'c-contact-phone', contactEmail: 'c-contact-email', address: 'c-address', memo: 'c-memo',
+};
+
+function resetForm() {
+  companyForm.reset();
+  document.getElementById('c-id').value = '';
+  formTitle.textContent = '기업정보 등록';
+  formSubmit.textContent = '등록';
+  formCancel.style.display = 'none';
+}
+
+function fillForm(company) {
+  document.getElementById(fieldIds.id).value = company.id;
+  document.getElementById(fieldIds.name).value = company.name || '';
+  document.getElementById(fieldIds.bizRegNo).value = company.bizRegNo || '';
+  document.getElementById(fieldIds.ceoName).value = company.ceoName || '';
+  document.getElementById(fieldIds.industry).value = company.industry || '';
+  document.getElementById(fieldIds.region).value = company.region || '';
+  document.getElementById(fieldIds.employeeCount).value = company.employeeCount ?? '';
+  document.getElementById(fieldIds.foundedDate).value = company.foundedDate || '';
+  document.getElementById(fieldIds.contactName).value = company.contactName || '';
+  document.getElementById(fieldIds.contactPhone).value = company.contactPhone || '';
+  document.getElementById(fieldIds.contactEmail).value = company.contactEmail || '';
+  document.getElementById(fieldIds.address).value = company.address || '';
+  document.getElementById(fieldIds.memo).value = company.memo || '';
+  formTitle.textContent = `"${company.name}" 수정`;
+  formSubmit.textContent = '저장';
+  formCancel.style.display = 'inline-block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+formCancel.addEventListener('click', () => resetForm());
+
+function renderCompanies(companies) {
+  if (!companies.length) {
+    companyList.innerHTML = '';
+    companyEmpty.style.display = 'block';
+    return;
+  }
+  companyEmpty.style.display = 'none';
+  companyList.innerHTML = companies.map((c) => `
+    <div class="company-item">
+      <div class="company-main">
+        <div class="name">${escapeHtml(c.name)}${c.region ? `<span class="badge">${escapeHtml(c.region)}</span>` : ''}</div>
+        <div class="sub">${escapeHtml(c.industry || '업종 미입력')} · 대표 ${escapeHtml(c.ceoName || '미입력')}${c.bizRegNo ? ` · ${escapeHtml(c.bizRegNo)}` : ''}</div>
+        <div class="meta">
+          ${c.contactName ? `<span>담당자 ${escapeHtml(c.contactName)}</span>` : ''}
+          ${c.contactPhone ? `<span>${escapeHtml(c.contactPhone)}</span>` : ''}
+          ${c.contactEmail ? `<span>${escapeHtml(c.contactEmail)}</span>` : ''}
+        </div>
+      </div>
+      <div class="item-actions">
+        <button type="button" class="btn-secondary" data-edit="${c.id}">수정</button>
+        <button type="button" class="btn-danger" data-delete="${c.id}">삭제</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+let currentCompanies = [];
+
+async function loadCompanies() {
+  const q = searchInput.value.trim();
+  try {
+    const res = await apiFetch(`/api/companies${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+    const data = await res.json();
+    currentCompanies = data.companies;
+    renderCompanies(currentCompanies);
+  } catch (err) { /* handled in apiFetch */ }
+}
+
+let searchTimer;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadCompanies, 250);
+});
+
+companyList.addEventListener('click', async (e) => {
+  const editBtn = e.target.closest('[data-edit]');
+  if (editBtn) {
+    const company = currentCompanies.find((c) => String(c.id) === editBtn.dataset.edit);
+    if (company) fillForm(company);
+    return;
+  }
+  const delBtn = e.target.closest('[data-delete]');
+  if (delBtn) {
+    if (!confirm('이 기업 정보를 삭제하시겠습니까?')) return;
+    try {
+      await apiFetch(`/api/companies/${delBtn.dataset.delete}`, { method: 'DELETE' });
+      loadCompanies();
+    } catch (err) {
+      alert(err.message || '삭제 중 오류가 발생했습니다.');
+    }
+  }
+});
+
+companyForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const companyMsg = document.getElementById('company-msg');
+  clearMsg(companyMsg);
+
+  const id = document.getElementById('c-id').value;
+  const payload = {
+    name: document.getElementById('c-name').value.trim(),
+    bizRegNo: document.getElementById('c-biz-reg-no').value.trim(),
+    ceoName: document.getElementById('c-ceo').value.trim(),
+    industry: document.getElementById('c-industry').value.trim(),
+    region: document.getElementById('c-region').value,
+    employeeCount: document.getElementById('c-employees').value,
+    foundedDate: document.getElementById('c-founded').value,
+    contactName: document.getElementById('c-contact-name').value.trim(),
+    contactPhone: document.getElementById('c-contact-phone').value.trim(),
+    contactEmail: document.getElementById('c-contact-email').value.trim(),
+    address: document.getElementById('c-address').value.trim(),
+    memo: document.getElementById('c-memo').value.trim(),
+  };
+
+  try {
+    const res = id
+      ? await apiFetch(`/api/companies/${id}`, { method: 'PATCH', body: JSON.stringify(payload) })
+      : await apiFetch('/api/companies', { method: 'POST', body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (!res.ok) { showMsg(companyMsg, data.error || '저장에 실패했습니다.', 'error'); return; }
+    showMsg(companyMsg, `"${data.name}" 정보가 저장되었습니다.`, 'success');
+    resetForm();
+    loadCompanies();
+  } catch (err) {
+    showMsg(companyMsg, err.message || '오류가 발생했습니다.', 'error');
+  }
+});
+
+renderAuthState();
+</script>
+</body>
+</html>
