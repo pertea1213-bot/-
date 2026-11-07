@@ -62,7 +62,7 @@ function renderNeonBox(neonConfig) {
       const weight = i === 0 ? "700" : "800";
       const glow =
         "0 0 4px #fff,0 0 10px #00f0ff,0 0 20px #00f0ff,0 0 40px #00f0ff,0 0 70px #00f0ff";
-      return `<div style="color:#fff;font-weight:${weight};font-size:${size};text-shadow:${glow};letter-spacing:1px;">${escapeHtml(line)}</div>`;
+      return `<div style="color:#fff;font-weight:${weight};font-size:${size};text-shadow:${glow};letter-spacing:1px;white-space:nowrap;">${escapeHtml(line)}</div>`;
     })
     .join("");
 
@@ -91,7 +91,7 @@ function renderPromotionsSection(promotions) {
   if (!promotions || !Array.isArray(promotions.items) || promotions.items.length === 0) return "";
   const { heading, contactPhone, contactEmail, items } = promotions;
   const headingHtml = heading
-    ? `<div style="font-weight:800;font-size:21px;color:#1a1a1a;">${escapeHtml(heading)}</div>`
+    ? `<div style="font-weight:800;font-size:21px;color:#1a1a1a;white-space:pre-line;">${escapeHtml(heading)}</div>`
     : "";
 
   const contactParts = [];
