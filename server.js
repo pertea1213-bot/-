@@ -12,6 +12,9 @@ app.use(express.json());
 app.use('/api/admin', authRouter);
 app.use('/api/pm', pmRouter);
 
+// fde-platform 은 자체 서버·DB 를 가진 별도 앱이다. 루트 정적 서빙으로 소스·DB(비밀번호 해시 포함)가 노출되지 않게 막는다.
+app.use('/fde-platform', (req, res) => res.status(404).end());
+
 app.use(express.static(path.join(__dirname), { extensions: ['html'], index: 'pm.html' }));
 
 app.use((err, req, res, next) => {

@@ -1,0 +1,26 @@
+name: fde-platform test
+
+on:
+  push:
+    paths: ['fde-platform/**', '.github/workflows/fde-platform-test.yml']
+  pull_request:
+    paths: ['fde-platform/**', '.github/workflows/fde-platform-test.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fde-platform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: fde-platform/package-lock.json
+      - run: npm ci
+      - run: npm test

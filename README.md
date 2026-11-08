@@ -42,3 +42,11 @@ ADMIN_PASSWORD=원하는비밀번호 npm start
 | PATCH/DELETE | `/api/pm/tasks/:id` | 작업 수정(상태 이동 포함) / 삭제 |
 | POST | `/api/pm/projects/:id/milestones` | 마일스톤 추가 |
 | PATCH/DELETE | `/api/pm/milestones/:id` | 마일스톤 수정(완료 체크) / 삭제 |
+
+## 온톨로지·FDE 플랫폼 (별도 앱)
+
+`fde-platform/` 에는 업무 구조도(온톨로지)와 FDE 방식의 컨설팅·교육 플랫폼이 독립 앱으로 들어 있습니다. 위 PM 도구와 서버·DB를 공유하지 않습니다. 실행 방법과 설계는 [`fde-platform/README.md`](fde-platform/README.md) 를 보세요.
+
+```bash
+cd fde-platform && npm install && npm start   # http://localhost:5100
+```
