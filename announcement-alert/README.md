@@ -119,7 +119,7 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
     "subjectPrefix": "코코그룹 정책뉴스 클리핑",
     "tagline": "중소기업・소상공인과 함께 성장하는",
     "bannerSubtitle": "사업공고・정책뉴스・논평까지, 한 번에 확인하는 코코그룹 정책 소식지입니다.",
-    "signatureImagePath": "assets/signature.png",
+    "signatureImageUrl": "https://raw.githubusercontent.com/pertea1213-bot/-/main/announcement-alert/assets/signature.png",
     "footer": {
       "companyName": "(주)콤파스컨설팅그룹",
       "address": "(04373) 서울 용산구 청파로 46, 한통빌딩 608호 (한강로3가)"
@@ -131,9 +131,9 @@ HTML을 직접 파싱합니다(`src/fetchNosaBoard.js`, `node-html-parser` 사�
 - `subjectPrefix`: 메일 제목과, 맨 위 진한 파란색 배너 박스 안의 큰 제목으로 쓰입니다.
 - `tagline`/`bannerSubtitle`: 배너 박스 안 제목 위/아래에 들어가는 짧은 문구입니다. 비워두면(`""`) 해당 줄은 생략됩니다.
 - 배너 위쪽 줄에는 왼쪽에 `subjectPrefix`, 오른쪽에 "{연}년 {월}월 {주차}주차 · VOL. {발행 회차}"가 표시됩니다. 발행 회차는 실제 발송(테스트 발송 제외)마다 1씩 자동으로 늘어나며 `data/issue-number.json`에 저장됩니다(GitHub Actions가 커밋).
-- `signatureImagePath`: 본문 하단에 원본 비율 그대로 들어가는 서명/약력 이미지입니다. 비워두면(`""`) 표시되지 않습니다.
+- `signatureImageUrl`: 본문 하단에 원본 비율 그대로 들어가는 서명/약력 이미지의 URL입니다. 비워두면(`""`) 표시되지 않습니다.
 - `footer`: 서명 이미지 아래, 어두운 박스로 들어가는 회사명・주소・저작권 표시입니다(그 아래에 간단한 수신거부 안내 문구도 자동으로 붙습니다). 비워두면(`null`) 이 박스는 생략됩니다.
-- 이미지를 쓰려면 파일을 저장소의 `announcement-alert/` 아래(예: `announcement-alert/assets/`)에 커밋해두어야 합니다.
+- 이미지는 메일 첨부가 아니라 이 URL을 그대로 `<img>` 태그에 연결하는 방식입니다(Gmail 등 일부 클라이언트에서 메일 첨부 인라인 이미지가 간헐적으로 안 뜨는 문제를 피하기 위함). 저장소가 공개(public)라면 `https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<경로>` 형태의 GitHub raw 링크를 그대로 쓰면 되고, 이미지 파일은 `announcement-alert/assets/`처럼 저장소 안에 커밋해두어야 합니다. 저장소가 비공개라면 별도로 공개 이미지 호스팅이 필요합니다.
 
 ## 7. 카테고리(영역)별로 묶어서 보내기
 

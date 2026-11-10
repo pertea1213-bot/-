@@ -74,7 +74,7 @@
     "tagline": "중소기업・소상공인과 함께 성장하는",
     "bannerSubtitle": "사업공고・정책뉴스・논평까지, 한 번에 확인하는 코코그룹 정책 소식지입니다.",
     "uncategorizedLabel": "오늘의 정책사업",
-    "signatureImagePath": "assets/signature.png",
+    "signatureImageUrl": "https://raw.githubusercontent.com/pertea1213-bot/-/main/announcement-alert/assets/signature.png",
     "neonBanner": {
       "text": "AX_NEON Ontology FDE 플랫폼\n12/14 오후 2시 론칭"
     },

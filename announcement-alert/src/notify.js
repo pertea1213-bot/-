@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import nodemailer from "nodemailer";
 import { groupByCategory } from "./categorize.js";
 import { getIssueNumber } from "./issueNumber.js";
@@ -156,11 +154,11 @@ function renderCategorySection(categoryName, items) {
     <table style="width:100%;border-collapse:collapse;">${items.map(renderAnnouncementRow).join("")}</table>`;
 }
 
-function renderFooter(signatureImagePath, footerConfig) {
-  const signature = signatureImagePath
+function renderFooter(signatureImageUrl, footerConfig) {
+  const signature = signatureImageUrl
     ? `
       <hr style="border:none;border-top:1px solid #ddd;margin:32px 0 16px;"/>
-      <img src="cid:notifySignature" alt="" style="max-width:100%;display:block;"/>`
+      <img src="${escapeHtml(signatureImageUrl)}" alt="" style="max-width:100%;display:block;"/>`
     : "";
 
   if (!footerConfig) return signature;
@@ -182,7 +180,7 @@ function renderFooter(signatureImagePath, footerConfig) {
 }
 
 function renderHtml(items, newsItems, commentary, config, issueNumber) {
-  const { subjectPrefix, tagline, bannerSubtitle, signatureImagePath, footer, promotions, neonBanner } = config.notify;
+  const { subjectPrefix, tagline, bannerSubtitle, signatureImageUrl, footer, promotions, neonBanner } = config.notify;
 
   const fallbackLabel = config.notify.uncategorizedLabel ?? "기타";
   const groups = groupByCategory(items, config.categories ?? [], fallbackLabel);
@@ -200,7 +198,7 @@ function renderHtml(items, newsItems, commentary, config, issueNumber) {
       ${renderCommentarySection(commentary)}
       ${newsSection}
       ${announcementSections}
-      ${renderFooter(signatureImagePath, footer)}
+      ${renderFooter(signatureImageUrl, footer)}
     </div>`;
 }
 
@@ -218,14 +216,6 @@ export async function sendDigestEmail(items, newsItems, commentary, config, { is
     auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
   });
 
-  const { signatureImagePath } = config.notify;
-  const attachments = [];
-  if (signatureImagePath) {
-    const fileUrl = new URL(`../${signatureImagePath}`, import.meta.url);
-    const content = await readFile(fileUrl);
-    attachments.push({ filename: path.basename(signatureImagePath), content, cid: "notifySignature" });
-  }
-
   const issueNumber = await getIssueNumber({ increment: !isTest });
 
   // NOTIFY_TO에 쉼표로 여러 이메일을 넣으면("a@x.com,b@y.com") nodemailer가 알아서
@@ -235,6 +225,5 @@ export async function sendDigestEmail(items, newsItems, commentary, config, { is
     to: NOTIFY_TO,
     subject: `${config.notify.subjectPrefix} VOL.${issueNumber} (신규 공고 ${items.length}건)`,
     html: renderHtml(items, newsItems, commentary, config, issueNumber),
-    attachments,
   });
 }
